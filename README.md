@@ -2,9 +2,40 @@
 
 Explore how a life sciences team follows a sample through its workflow, reviews changing results and finds the files behind a finding. **Source of Truth for Life Sciences** is the working application in this repository: a visual, interactive example for studying and extending these information relationships.
 
-The Corridor connects work from intake to reporting. The Plate brings a sample's history, quality, consent and related files into one view. Desktop adds specimen comparisons, source records, cohort rules and presentations; mobile concentrates on the Corridor and Plate. [Try the working application](https://kindlight.ai), or run the bundled examples below. [Fixture provenance](docs/fixture-provenance.md) explains the example findings and policy assumptions.
+Use the working components as a starting point for information-dense tools, with responsive layouts, notifications, error recovery, color themes and interactive 3D views already connected. Explore with bundled examples or PostgreSQL-backed records, then adapt the data and Figma Make configuration for your own project.
 
-![The Plate’s colored sample wells and history rings](public/source-of-truth-systems-social-preview.png)
+- [Try the working application](https://kindlight.ai), or run the bundled examples below.
+- [Explore the developer documentation](https://kindlight.foundation) to find the code behind the experience.
+- [Read the fixture provenance](docs/fixture-provenance.md) for the example findings and policy assumptions.
+
+## Explore the workflows
+
+### Follow work through the Corridor
+
+See how work moves from sample intake to reporting. The Corridor keeps each step beside its supporting records, so you can follow the process and inspect what happens along the way.
+
+![Desktop workspace showing the 3D Corridor and its workflow steps](docs/images/readme/desktop-corridor.png)
+
+### Understand a sample's history
+
+Select a well to compare its results over time. The Plate brings sample history, quality, consent and related files together, helping you investigate questions such as why a sample was rerun.
+
+![Desktop 3D Plate in Sample history mode with a selected well and its results](docs/images/readme/desktop-sample-history.png)
+
+### Build and explore cohort rules
+
+The working rule builder lets you combine conditions and see which example specimens match. Desktop also gives you room to compare specimens, inspect source records and assemble presentations around the findings.
+
+![Desktop cohort rule builder with configured conditions and matching example specimens](docs/images/readme/desktop-cohort-builder.png)
+
+### Explore the Corridor and Plate on mobile
+
+Mobile puts the Corridor and Plate within reach of direct touch controls. Follow the workflow, select a well and open its 3D Sample history; the selected view and records stay with you as the layout changes.
+
+<p>
+  <img src="docs/images/readme/mobile-corridor.png" alt="Mobile Corridor with its 3D workflow and touch controls" width="320">
+  <img src="docs/images/readme/mobile-sample-history.png" alt="Mobile 3D Plate showing the selected sample's history" width="320">
+</p>
 
 ## Run the complete local example
 
@@ -36,6 +67,14 @@ For interface-only exploration or hot reload, install pnpm **10.34.3**, run `pnp
 | Deploy the example | [Node hosting](docs/deployment.md) |
 | Make a focused change | [Contributing](CONTRIBUTING.md) and [test selection](tests/README.md) |
 | Browse design decisions and interaction contracts | [Documentation](docs/README.md) |
+| Guide an AI collaborator through a focused change | [Repository skills](AGENTS.md#continue-a-collaboration) |
+| Follow a repeatable development or delivery procedure | [Runbooks](docs/runbooks/README.md) |
+
+## Work with an AI collaborator
+
+The repository skills give an AI collaborator practical guidance for recurring work, such as checking code and release files for exposed API keys, preserving unfinished edits and choosing tests that exercise the behavior being changed. They keep useful development practices close to the code so a new collaboration can start with context.
+
+Companion runbooks turn those practices into repeatable steps for making changes, checking dependencies, recovering data and delivering a release. Use the [skills index](AGENTS.md#continue-a-collaboration) to choose a method and the [runbook index](docs/runbooks/README.md) to follow an established procedure. Both travel with your clone and can evolve with your project.
 
 ## Verify a change
 
