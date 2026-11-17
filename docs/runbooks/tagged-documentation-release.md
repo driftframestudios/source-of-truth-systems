@@ -1,7 +1,7 @@
 ---
 title: Release a reviewed documentation build
 version: 0.1.0
-status: working
+status: exercised
 audience: repository owner and authorized maintainers
 task_type: operational_runbook
 ---
@@ -58,7 +58,7 @@ After deployment, open the foundation site signed out. Check the home page, dire
 
 Keep the currently served site while a candidate fails. Correct the owning source through review and create a new publication commit/tag when the selected source changes. For a prior accepted release, activate its retained verified artifact and digest, or rerun preflight for the same immutable app/docs pair and receive the newly built artifact. A rebuild is a new artifact observation even when its source coordinates match. Release artifacts use ordinary Pages storage and retention; they are not a permanent backup service.
 
-Complete the return in the existing release PR or Issue: selected tag and three revisions, preflight and activation runs, manifest digest, normalized checks, signed-out host result, and any remaining host or visibility action. Keep raw logs, credentials and account details with their protected owners. The runbook remains **working** until its first end-to-end hosted receiving exercise is recorded there.
+Complete the return in the existing release PR or Issue: selected tag and three revisions, preflight and activation runs, manifest digest, normalized checks, signed-out host result, and any remaining host or visibility action. Keep raw logs, credentials and account details with their protected owners. The first end-to-end exercise published `docs-v0.1.0` on 2026-11-17. The [release issue](https://github.com/driftframestudios/source-of-truth-systems/issues/6) carries the exact artifact and hosted observations. Future releases repeat the receiving checks for their own selected files.
 
 ## Source and focused proof
 
