@@ -8,7 +8,7 @@
 - `npm run build:foundation` creates the same articles at the site root in `dist-foundation/`, with `https://kindlight.foundation` as its canonical origin. This command builds static files; publication and host configuration remain explicit owner actions.
 - `npm run build:docs` rebuilds only the `/docs/` projection after dependencies are installed. The ordinary Node server still needs its application and server builds.
 
-Both routes work from an ordinary source ZIP without Git, a database or network documentation fetches. Application origin comes from `.figma/make/site.json`; the documentation manifest supplies the separate foundation origin and base. Change those owners when the receiving host changes.
+Both local build routes work from an ordinary source ZIP without Git, a database or network documentation fetches. The separate [tagged Pages release](../runbooks/tagged-documentation-release.md) uses Git to bind accepted app, publication and trusted workflow revisions to one verified static artifact. Application origin comes from `.figma/make/site.json`; the documentation manifest supplies the separate foundation origin and base. Change those owners when the receiving host changes.
 
 ## Add an article
 

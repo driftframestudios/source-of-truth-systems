@@ -8,6 +8,8 @@ The Corridor connects work from intake to reporting. The Plate brings a sample's
 
 ## Run the complete local example
 
+Source access currently requires a repository invitation. The [live application](https://kindlight.ai) remains available to explore.
+
 Install Git, Node **22.15 or newer within 22.x**, and Docker with Compose. The recipe supplies locked application dependencies and a PostgreSQL database owned by this clone.
 
 ```sh
@@ -56,7 +58,7 @@ npm run test:browser
 
 Build before the aggregate tests: API and startup checks inspect the generated outputs. The browser suite owns port 3200. Actual PostgreSQL proof is an explicitly selected [isolated database route](docs/postgresql.md#focused-evidence), separate from ordinary tests. [Tests](tests/README.md) explains narrower choices, prerequisites and result boundaries.
 
-Main pull requests receive the fitting **Verify change** route and committed-tree scan. Optional deeper checks and the disabled [branch protection profiles](.github/rulesets/README.md) retain their own scope and activation. The docs branch uses a pinned data-only verification route after the separately approved Pages transition.
+Main pull requests receive the fitting **Verify change** route and committed-tree scan. Optional deeper checks retain their own scope. The [branch and tag protection contracts](.github/rulesets/README.md) preserve accepted source; the docs branch uses its pinned data-only verification route.
 
 ## Deploy or adapt
 
@@ -64,7 +66,7 @@ The complete application runs on Node. `npm run build` creates browser files and
 
 The PostgreSQL adapter and [Compose/native setup](docs/runbooks/local-postgresql-clone.md) persist Plate history and expiring Source metadata workspaces. Each clone owns its local data and generated credentials. [Database choices](docs/database-choices.md) explains the current contract and optional property-graph, RDF or object-store extensions.
 
-The ordinary Node build also serves **Developer docs** at `/docs/`, opened in a separate tab so current work stays mounted. `npm run build:foundation` builds the same admitted articles at site root in `dist-foundation/`; publishing that static site remains a separate owner action. The source-derived GraphQL reference and all documentation profiles share [one content manifest](docs/content-manifest.json).
+The ordinary Node build also serves **Developer docs** at `/docs/`, opened in a separate tab so current work stays mounted. `npm run build:foundation` builds the same admitted articles at site root in `dist-foundation/`. The [tagged documentation release](docs/runbooks/tagged-documentation-release.md) builds one reviewed artifact and explicitly activates those same files on Pages. The source-derived GraphQL reference and all documentation profiles share [one content manifest](docs/content-manifest.json).
 
 The repository retains its Figma Make entry scripts and Vite adapter. They provide source configuration for a fresh Make session; a new import still needs verification in that session. The pinned container recipe has its own fresh-clone and recovery proof; a receiving managed host still needs a deployment observation.
 
