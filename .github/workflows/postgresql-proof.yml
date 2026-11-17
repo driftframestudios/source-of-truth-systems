@@ -1,0 +1,41 @@
+name: PostgreSQL clone proof
+on:
+  workflow_dispatch:
+    inputs:
+      run_checks:
+        description: Exercise two disposable PostgreSQL clones (clear to skip allocation)
+        type: boolean
+        default: true
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: postgresql-clone-${{ github.ref }}-${{ inputs.run_checks }}
+  cancel-in-progress: true
+jobs:
+  clone-proof:
+    if: inputs.run_checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          package-manager-cache: false
+      - name: Check the owned container receiver
+        run: |
+          docker --context default info > /dev/null
+          docker --context default compose version
+      - name: Exercise independent clones and recovery
+        env:
+          CLONE_COMPOSE_TEST: '1'
+          SOT_DOCKER_CONTEXT: default
+        run: node --test tests/clone-compose.mjs
+      - name: Record the observation
+        run: |
+          printf '%s\n' 'Two disposable PostgreSQL clones passed stored reads, isolated Source edits, app/database restart, trusted backup recovery, failed-restore preservation, reset isolation and configured-outage recovery.' 'The proof uses the runner-owned Docker context and exact temporary project identities. Generated credentials, dumps, cookies and diagnostic files stay on the ephemeral runner; this workflow publishes no artifacts.' >> "$GITHUB_STEP_SUMMARY"

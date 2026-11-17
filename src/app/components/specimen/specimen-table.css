@@ -1,0 +1,734 @@
+.specimen-surface {
+  --specimen-ink: var(--sot-table-text);
+  --specimen-muted: var(--sot-table-muted);
+  --specimen-edge: var(--sot-table-border);
+  --specimen-panel: var(--sot-shell-surface);
+  --specimen-success: var(--sot-status-success);
+  --specimen-warning: var(--sot-status-warning);
+  --specimen-danger: var(--sot-status-danger);
+  --specimen-info: var(--sot-status-info);
+  --specimen-violet: var(--sot-status-violet);
+  color: var(--specimen-ink);
+}
+.specimen-register {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+.specimen-toolbar,
+.specimen-filters,
+.specimen-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--specimen-edge);
+}
+.specimen-toolbar {
+  background: var(--sot-shell-background);
+}
+.specimen-toolbar h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.specimen-toolbar h2 svg {
+  color: var(--specimen-info);
+}
+.specimen-toolbar label,
+.specimen-filters label,
+.specimen-summary label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--specimen-muted);
+  font-size: 10px;
+}
+.specimen-register :where(input, select) {
+  min-height: 30px;
+  padding: 5px 8px;
+  color: var(--specimen-ink);
+  background: var(--sot-shell-raised);
+  border: 1px solid var(--specimen-edge);
+  border-radius: 5px;
+  font-size: 11px;
+}
+.specimen-toolbar input {
+  width: 245px;
+}
+.specimen-toolbar input::placeholder {
+  color: var(--specimen-muted);
+}
+.specimen-toolbar__count {
+  margin-left: auto;
+  font:
+    11px ui-monospace,
+    monospace;
+  color: var(--specimen-muted);
+}
+.specimen-register button,
+.specimen-dialog button {
+  cursor: pointer;
+}
+.specimen-surface button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.specimen-view-switch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--specimen-edge);
+  border-radius: 5px;
+}
+.specimen-view-switch button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  font-size: 11px;
+  border-radius: 3px;
+  color: var(--specimen-muted);
+}
+.specimen-view-switch button[aria-pressed="true"] {
+  color: var(--sot-shell-on-accent);
+  background: var(--sot-shell-accent);
+}
+.specimen-filters {
+  gap: 8px 14px;
+  padding-block: 9px;
+  background: var(--sot-shell-surface);
+}
+.specimen-filters select {
+  max-width: 145px;
+}
+.specimen-filters > button,
+.specimen-summary > button {
+  font-size: 10px;
+  color: var(--specimen-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.specimen-summary {
+  gap: 8px 20px;
+  padding-block: 9px;
+  background: var(--sot-shell-surface);
+}
+.specimen-summary > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--specimen-muted);
+}
+.specimen-summary strong {
+  color: var(--specimen-ink);
+  font-variant-numeric: tabular-nums;
+}
+.specimen-summary svg {
+  color: var(--sot-shell-secondary);
+}
+.specimen-sort {
+  margin-left: auto;
+}
+.specimen-sort select {
+  max-width: 160px;
+  min-height: 27px;
+}
+.specimen-table-scroll {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--sot-shell-strong-border) var(--sot-shell-background);
+}
+.specimen-table {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: 11px;
+}
+.specimen-table caption {
+  padding: 12px 20px;
+  color: var(--specimen-muted);
+  font-size: 11px;
+  text-align: left;
+}
+.specimen-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-block: 1px solid var(--specimen-edge);
+  background: var(--sot-table-header);
+  text-align: left;
+  color: var(--sot-shell-secondary);
+}
+.specimen-table thead th:first-child {
+  width: 16%;
+  left: 0;
+  z-index: 3;
+}
+.specimen-table thead th:nth-child(2) {
+  width: 15%;
+}
+.specimen-table thead th:nth-child(7) {
+  width: 13%;
+}
+.specimen-table thead button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 12px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+}
+.specimen-table thead button svg {
+  flex-shrink: 0;
+  color: var(--specimen-muted);
+}
+.specimen-table [aria-sort="ascending"] button,
+.specimen-table [aria-sort="descending"] button {
+  color: var(--sot-shell-selected-text);
+}
+.specimen-table__record > th,
+.specimen-table__record > td {
+  padding: 0;
+  border-bottom: 1px solid var(--specimen-edge);
+  text-align: left;
+  vertical-align: middle;
+  font-weight: 400;
+  background: var(--sot-table-background);
+  overflow-wrap: break-word;
+}
+.specimen-table__record:nth-child(even) > * {
+  background: var(--sot-table-alternate);
+}
+.specimen-table__record > th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.specimen-table__cell {
+  display: block;
+  width: 100%;
+  min-height: 104px;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid transparent;
+}
+.specimen-table__cell:hover {
+  background: var(--sot-table-selected);
+  border-color: var(--sot-shell-selected-text);
+}
+.specimen-table__cell strong {
+  display: block;
+  font-weight: 500;
+}
+.specimen-table__cell small {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--specimen-muted);
+}
+.specimen-table__cell .specimen-priority {
+  display: inline-block;
+  margin-top: 6px;
+}
+.specimen-table__qc {
+  color: var(--specimen-warning);
+}
+.specimen-priority {
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--specimen-success);
+  color: var(--specimen-success);
+  text-transform: uppercase;
+  font-size: 9px;
+}
+.specimen-priority[data-priority="stat"] {
+  color: var(--specimen-danger);
+  border-color: var(--specimen-danger);
+}
+.specimen-priority[data-priority="expedited"] {
+  color: var(--specimen-warning);
+  border-color: var(--specimen-warning);
+}
+.specimen-state,
+.specimen-consent {
+  display: inline-block;
+  padding: 4px 5px;
+  border-radius: 4px;
+  line-height: 1.4;
+  font-size: 11px;
+}
+.specimen-state[data-kind="sample"] {
+  background: color-mix(
+    in srgb,
+    var(--specimen-info) 12%,
+    var(--sot-table-background)
+  );
+  color: var(--specimen-info);
+}
+.specimen-state[data-kind="review"] {
+  background: color-mix(
+    in srgb,
+    var(--specimen-violet) 12%,
+    var(--sot-table-background)
+  );
+  color: var(--specimen-violet);
+}
+.specimen-state[data-kind="order"] {
+  background: color-mix(
+    in srgb,
+    var(--specimen-warning) 12%,
+    var(--sot-table-background)
+  );
+  color: var(--specimen-warning);
+}
+.specimen-consent {
+  color: var(--specimen-success);
+}
+.specimen-consent[data-status="pending"] {
+  color: var(--specimen-warning);
+}
+.specimen-consent[data-status="rescinded"],
+.specimen-consent[data-status="expired"] {
+  color: var(--specimen-danger);
+}
+.specimen-masonry {
+  columns: 3;
+  column-gap: 14px;
+  padding: 18px 20px;
+}
+.specimen-card {
+  break-inside: avoid;
+  margin-bottom: 14px;
+  border-radius: 5px;
+  border: 1px solid var(--specimen-edge);
+  background: var(--sot-table-alternate);
+}
+.specimen-card[data-consent="rescinded"],
+.specimen-card[data-consent="expired"] {
+  border-color: color-mix(
+    in srgb,
+    var(--specimen-danger) 55%,
+    var(--specimen-edge)
+  );
+}
+.specimen-card[data-consent="pending"] {
+  border-color: color-mix(
+    in srgb,
+    var(--specimen-warning) 55%,
+    var(--specimen-edge)
+  );
+}
+.specimen-card__body {
+  padding: 13px;
+}
+.specimen-card header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.specimen-card__identity {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font:
+    600 11px ui-monospace,
+    monospace;
+  text-align: left;
+}
+.specimen-card__identity svg {
+  color: var(--specimen-muted);
+}
+.specimen-card header p {
+  margin: 4px 0 0;
+  font:
+    9px ui-monospace,
+    monospace;
+  color: var(--specimen-muted);
+}
+.specimen-card__indication {
+  margin: 12px 0 3px;
+  font-size: 11px;
+}
+.specimen-card__material {
+  color: var(--specimen-muted);
+  font-size: 10px;
+  margin: 0;
+}
+.specimen-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  font:
+    9px ui-monospace,
+    monospace;
+  color: var(--specimen-muted);
+  margin-top: 10px;
+}
+.specimen-card__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.specimen-card__consent {
+  text-align: left;
+  font:
+    9px ui-monospace,
+    monospace;
+  margin-top: 8px;
+  padding-left: 0;
+}
+.specimen-card__consent span {
+  color: var(--specimen-muted);
+}
+.specimen-card__section {
+  border-top: 1px solid var(--specimen-edge);
+  padding-top: 11px;
+  margin-top: 11px;
+}
+.specimen-card h3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font:
+    9px ui-monospace,
+    monospace;
+  color: var(--specimen-muted);
+}
+.specimen-card h3 button {
+  color: var(--specimen-ink);
+}
+.specimen-card h3 button:hover,
+.specimen-card__identity:hover {
+  color: var(--sot-shell-selected-text);
+}
+.specimen-card__note {
+  color: var(--specimen-muted);
+  font-size: 10px;
+  line-height: 1.55;
+  font-style: italic;
+  margin-top: 10px;
+}
+.specimen-card > .specimen-detail__hold {
+  padding: 8px 12px;
+  margin: 0;
+  border-bottom: 1px solid var(--specimen-edge);
+  font-size: 10px;
+  background: color-mix(in srgb, var(--specimen-warning) 8%, transparent);
+}
+.specimen-detail__note {
+  margin: 10px 0 0;
+  color: var(--specimen-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.specimen-detail__note svg {
+  display: inline;
+  vertical-align: middle;
+}
+.specimen-detail__lead {
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+.specimen-detail__hold {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 18px;
+  color: var(--specimen-warning);
+  font-size: 12px;
+}
+.specimen-facts {
+  margin: 0;
+  font-size: 12px;
+}
+.specimen-facts > div {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.8fr) minmax(0, 1.5fr);
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--specimen-edge);
+}
+.specimen-facts dt {
+  color: var(--specimen-muted);
+}
+.specimen-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.specimen-coverage-list {
+  display: grid;
+  gap: 12px;
+}
+.specimen-coverage > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+  font-size: 10px;
+}
+.specimen-coverage strong {
+  color: var(--specimen-warning);
+  font-size: 10px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.specimen-coverage small {
+  color: var(--specimen-muted);
+  font-size: inherit;
+}
+.specimen-coverage__track {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sot-shell-raised);
+}
+.specimen-coverage__track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--specimen-warning);
+}
+.specimen-coverage[data-met="true"] strong {
+  color: var(--specimen-success);
+}
+.specimen-coverage[data-met="true"] .specimen-coverage__track > span {
+  background: var(--specimen-success);
+}
+.specimen-coverage__track i {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--specimen-ink);
+}
+.specimen-qc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.specimen-qc span {
+  color: var(--specimen-warning);
+  font:
+    10px ui-monospace,
+    monospace;
+}
+.specimen-qc [data-clear="true"] {
+  color: var(--specimen-muted);
+}
+.specimen-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.specimen-timeline li {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--specimen-muted);
+  font-size: 10px;
+}
+.specimen-timeline__dot {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--sot-shell-strong-border);
+  border-radius: 50%;
+}
+.specimen-timeline [data-complete="true"] .specimen-timeline__dot {
+  background: var(--specimen-success);
+  border-color: var(--specimen-success);
+}
+.specimen-timeline__date {
+  font:
+    9px ui-monospace,
+    monospace;
+}
+.specimen-detail__workflow > div {
+  flex-wrap: wrap;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--specimen-edge);
+}
+.specimen-detail__workflow span,
+.specimen-detail__workflow button {
+  font-size: 10px;
+}
+.specimen-detail__workflow button {
+  min-height: 28px;
+  padding-inline: 8px;
+}
+.specimen-detail__workflow > div > div:last-child {
+  max-width: 100%;
+}
+.specimen-card .specimen-detail__workflow .specimen-detail__note {
+  font-size: 9px;
+  margin-top: 5px;
+}
+.specimen-card .specimen-detail__workflow span,
+.specimen-card .specimen-detail__workflow button {
+  font-size: 9px;
+}
+.specimen-card .specimen-detail__workflow > div {
+  padding-block: 7px;
+  gap: 5px;
+}
+.specimen-table__empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--specimen-muted);
+}
+.specimen-table__empty button {
+  margin-top: 10px;
+  text-decoration: underline;
+}
+.specimen-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--sot-shell-background) 74%, transparent);
+  backdrop-filter: blur(5px);
+}
+.specimen-dialog-position {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  pointer-events: none;
+}
+.specimen-dialog {
+  pointer-events: auto;
+  width: min(880px, 100%);
+  max-height: min(760px, calc(100dvh - 48px));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--sot-shell-strong-border);
+  border-radius: 10px;
+  background: var(--sot-shell-surface);
+  box-shadow: 0 20px 70px #0005;
+  overflow: hidden;
+}
+.specimen-dialog__rail {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 24px 16px;
+  background: var(--sot-shell-raised);
+  border-bottom: 1px solid var(--specimen-edge);
+}
+.specimen-dialog__rail h2 {
+  margin: 0;
+  font:
+    600 16px ui-monospace,
+    monospace;
+  color: var(--sot-shell-selected-text);
+}
+.specimen-dialog__rail p {
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: var(--specimen-muted);
+}
+.specimen-dialog__rail button {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--specimen-edge);
+  border-radius: 5px;
+}
+.specimen-dialog__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--specimen-edge);
+}
+.specimen-dialog__topics button {
+  padding: 7px 9px;
+  font-size: 11px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--specimen-muted);
+}
+.specimen-dialog__topics [aria-current="page"] {
+  color: var(--sot-shell-selected-text);
+  background: var(--sot-shell-selected);
+  border-color: var(--sot-shell-selected-text);
+}
+.specimen-dialog__body {
+  min-height: 0;
+  overflow: auto;
+  padding: 22px 24px 28px;
+  overscroll-behavior: contain;
+}
+.specimen-dialog__body h3 {
+  margin: 0 0 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.specimen-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid var(--specimen-edge);
+  padding: 12px 24px;
+  color: var(--specimen-muted);
+  font-size: 11px;
+}
+.specimen-dialog__footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+}
+.specimen-surface :where(button, input, select):focus-visible,
+.specimen-table-scroll:focus-visible {
+  outline: 2px solid var(--sot-shell-focus);
+  outline-offset: 3px;
+}
+@media (max-width: 1250px) {
+  .specimen-masonry {
+    columns: 2;
+  }
+  .specimen-filters label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+@media (min-width: 1850px) {
+  .specimen-masonry {
+    columns: 4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .specimen-surface * {
+    scroll-behavior: auto;
+  }
+}

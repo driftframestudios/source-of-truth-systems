@@ -1,0 +1,54 @@
+name: Optional MySQL compatibility proof
+on:
+  workflow_dispatch:
+    inputs:
+      run_checks:
+        description: Run the disposable database proof
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: database-${{ github.ref }}-${{ inputs.run_checks }}
+  cancel-in-progress: true
+jobs:
+  mysql:
+    if: inputs.run_checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4.13
+        env:
+          MYSQL_ROOT_PASSWORD: disposable-ci-root
+          MYSQL_DATABASE: sot_ci_proof
+          MYSQL_USER: sot_ci
+          MYSQL_PASSWORD: disposable-ci-only
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_NAME: sot_ci_proof
+      DB_USER: sot_ci
+      DB_PASSWORD: disposable-ci-only
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/prepare
+      - name: Install the SQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes mysql-client
+      - run: pnpm build
+      - run: pnpm test:mysql
+        env:
+          DB_PORT: ${{ job.services.mysql.ports['3306'] }}
+      - name: Record the observation
+        run: |
+          printf '%s\n' 'Catalog import, indexed reads, workspace transactions and production HTTP proofs passed on an ephemeral MySQL service.' 'These checks recreate synthetic tables in this runner. The public deployment path uses PostgreSQL; this separately selected check covers the retained compatibility adapter.' >> "$GITHUB_STEP_SUMMARY"

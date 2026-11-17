@@ -1,0 +1,6 @@
+/* StatusBadge owns domain labels and palette roles; geometry stays in its shared base. */
+:root[data-appearance="light"] .record-badge {
+  color: var(--record-badge-ink);
+  background-color: color-mix(in srgb, var(--record-badge-ink) 8%, var(--sot-shell-surface));
+  border-color: color-mix(in srgb, var(--record-badge-ink) 28%, var(--sot-shell-surface));
+}

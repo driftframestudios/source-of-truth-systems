@@ -1,0 +1,15 @@
+{
+  "description": "Explore genomics workflows, sample histories, and data provenance in a visual, interactive life sciences experience.",
+  "url": "https://kindlight.ai",
+  "robots": {
+    "index": true
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  },
+  "title": "Source of Truth for Life Sciences | Vikrant Kudesia",
+  "openGraph": {
+    "image": "https://kindlight.ai/source-of-truth-systems-social-preview.png"
+  }
+}

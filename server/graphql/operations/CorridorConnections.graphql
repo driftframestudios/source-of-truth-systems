@@ -1,0 +1,9 @@
+query CorridorConnections($first: Int = 20, $after: String) {
+  corridor {
+    connections(first: $first, after: $after) {
+      totalCount
+      pageInfo { endCursor hasNextPage }
+      edges { cursor node { id kind from { id label } to { id label } } }
+    }
+  }
+}

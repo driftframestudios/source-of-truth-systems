@@ -1,0 +1,280 @@
+.guide-trigger,
+.guide-actions button,
+.guide-transport nav button,
+.guide-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid
+    color-mix(in srgb, var(--sot-shell-strong-border) 18%, transparent);
+  border-radius: 0.45rem;
+  padding: 0.4rem 0.65rem;
+  background: var(--sot-shell-inset);
+  color: var(--sot-shell-text);
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+.guide-trigger {
+  font-family: monospace;
+  padding: 0.25rem 0.5rem;
+}
+.guide-trigger:hover,
+.guide-actions button:hover,
+.guide-choices button:hover {
+  border-color: var(--sot-status-info);
+}
+.guide-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.guide-invitation {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: min(25rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 6rem);
+  overflow-y: auto;
+  z-index: 35;
+  padding: 1.4rem;
+  border: 1px solid
+    color-mix(in srgb, var(--sot-shell-strong-border) 18%, transparent);
+  border-top: 3px solid var(--sot-status-info);
+  border-radius: 0.8rem;
+  color: var(--sot-shell-text);
+  background: var(--sot-shell-background);
+  box-shadow:
+    0 3px 10px #0002,
+    0 14px 40px #0002;
+  animation: guide-arrive 0.3s ease-out;
+}
+.guide-close {
+  position: absolute;
+  right: 0.6rem;
+  top: 0.6rem;
+  border: 0;
+  background: transparent;
+}
+.guide-eyebrow {
+  color: var(--sot-shell-muted);
+  font: 0.63rem/1.5 monospace;
+  letter-spacing: 0.05em;
+}
+.guide-invitation h2 {
+  margin: 0.6rem 0;
+  font:
+    1.9rem/1.15 "Playfair Display",
+    serif;
+}
+.guide-invitation p {
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--sot-shell-secondary);
+}
+.guide-choices {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+.guide-choices button {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.7rem;
+  border: 1px solid
+    color-mix(in srgb, var(--sot-shell-strong-border) 18%, transparent);
+  border-radius: 0.5rem;
+  background: var(--sot-shell-inset);
+  color: var(--sot-shell-text);
+  font-size: 0.78rem;
+}
+.guide-choices button > span,
+.guide-transport nav button > span {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: var(--sot-status-info);
+  border: 1px solid currentColor;
+  font: 0.65rem monospace;
+}
+.guide-choices svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.guide-actions .guide-primary {
+  color: var(--sot-shell-text);
+  background: color-mix(
+    in srgb,
+    var(--sot-status-info) 18%,
+    var(--sot-shell-inset)
+  );
+  border-color: var(--sot-status-info);
+}
+.guide-invitation .guide-footnote {
+  font-size: 0.68rem;
+  margin-top: 0.75rem;
+  color: var(--sot-shell-muted);
+}
+.guide-rail {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 0.8rem 1.1rem;
+  background: var(--sot-shell-inset);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--sot-shell-strong-border) 18%, transparent);
+  color: var(--sot-shell-text);
+}
+.guide-narrative h2 {
+  font:
+    1.15rem/1.3 "Playfair Display",
+    serif;
+  margin: 0.15rem 0 0.35rem;
+}
+.guide-narrative p {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  max-width: 68ch;
+  margin: 0;
+}
+.guide-hint {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--sot-shell-muted);
+  font-size: 0.68rem;
+}
+.guide-transport {
+  align-self: center;
+  max-width: 31rem;
+}
+.guide-transport nav {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+.guide-transport nav button {
+  border-color: transparent;
+}
+.guide-transport nav button[aria-current="step"] {
+  border-color: var(--sot-status-info);
+  background: color-mix(in srgb, var(--sot-status-info) 10%, transparent);
+}
+.guide-progress {
+  height: 2px;
+  margin-top: 0.65rem;
+  background: color-mix(
+    in srgb,
+    var(--sot-shell-strong-border) 18%,
+    transparent
+  );
+  overflow: hidden;
+}
+.guide-progress i {
+  display: block;
+  height: 100%;
+  background: var(--sot-status-info);
+  transform-origin: left;
+  animation: guide-reading 16s linear both;
+}
+@keyframes guide-reading {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes guide-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 1100px) {
+  .guide-rail {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+  .guide-transport {
+    max-width: none;
+  }
+  .guide-transport nav {
+    margin-bottom: 0.4rem;
+  }
+}
+@media (max-width: 767px) {
+  .guide-rail {
+    padding: 0.8rem 1rem;
+  }
+  .guide-transport nav button {
+    font-size: 0.63rem;
+    padding: 0.3rem;
+  }
+  .guide-actions button {
+    min-height: 36px;
+  }
+  .guide-invitation {
+    bottom: 1rem;
+    right: 1rem;
+    padding: 1rem;
+  }
+  .guide-invitation h2 {
+    font-size: 1.6rem;
+  }
+  .guide-trigger {
+    min-height: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-invitation,
+  .guide-progress i {
+    animation: none;
+  }
+}
+.mobile-showcase > .guide-rail {
+  max-height: min(36dvh, 280px);
+  overflow-y: auto;
+}
+.mobile-showcase .guide-transport {
+  order: -1;
+}
+.mobile-showcase .guide-transport nav {
+  display: none;
+}
+.mobile-showcase .guide-narrative h2 {
+  font-size: 1rem;
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .mobile-showcase:has(> .guide-rail) {
+    grid-template-rows: 62px auto minmax(0, 1fr);
+  }
+  .mobile-showcase > .guide-rail {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-block: 0.45rem;
+    max-height: 30dvh;
+  }
+  .mobile-showcase .guide-transport {
+    order: 1;
+    max-width: 20rem;
+  }
+  .mobile-showcase .guide-hint {
+    display: none;
+  }
+}

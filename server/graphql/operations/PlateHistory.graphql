@@ -1,0 +1,101 @@
+query PlateHistory($plateId: ID!, $id: ID!) {
+  dataSource {
+    mode
+  }
+  well(plateId: $plateId, id: $id) {
+    id
+    plateId
+    asOf
+    row
+    column
+    role
+    sampleId
+    assay
+    consent
+    contaminationProbability
+    history(first: 50) {
+      totalCount
+      pageInfo {
+        hasNextPage
+      }
+      edges {
+        node {
+          id
+          wellId
+          sequence
+          kind
+          status
+          label
+          title
+          specimenType
+          assayLabel
+          physicalPlateId
+          physicalWellId
+          flowCell
+          pipeline
+          runDate
+          reason
+          finding
+          consent
+          minWriteRole
+          artifactsRestricted
+          specimenId
+          patientCode
+          seriesLabel
+          trigger {
+            source
+            refId
+            detail
+          }
+          supersedes {
+            id
+          }
+          metrics {
+            key
+            label
+            value
+            unit
+            target
+            comparator
+          }
+          ctDna {
+            detected
+            meanVafPct
+            tracked
+            detectedCount
+            mtmPerMl
+            emerging
+          }
+          artifacts(first: 8) {
+            totalCount
+            pageInfo {
+              hasNextPage
+            }
+            edges {
+              node {
+                legalHold
+                reusedFrom {
+                  id
+                }
+                file {
+                  id
+                  kind
+                  sizeBytes
+                  createdAt
+                  lifecycleRuleId
+                }
+                restore {
+                  state
+                  tier
+                  requestedAt
+                  readyAt
+                  expiresAt
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

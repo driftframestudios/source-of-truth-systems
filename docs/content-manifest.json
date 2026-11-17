@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "profiles": {
+    "app": {
+      "base": "/docs/",
+      "output": "dist/docs",
+      "origin": "site"
+    },
+    "foundation": {
+      "base": "/",
+      "output": "dist-foundation",
+      "origin": "https://kindlight.foundation"
+    }
+  },
+  "llm": {
+    "rootMarkdown": true,
+    "license": true,
+    "roots": [
+      "docs",
+      "guidelines",
+      ".agents/skills"
+    ]
+  },
+  "articles": [
+    {
+      "slug": "",
+      "source": "docs/site/index.md",
+      "title": "Build with Source of Truth",
+      "description": "Explore the architecture, run the synthetic example, and make a focused change.",
+      "group": "Start"
+    },
+    {
+      "slug": "getting-started",
+      "source": "docs/getting-started.md",
+      "title": "Run and explore",
+      "description": "Start the interface and Node API, follow a sample, and run a focused check.",
+      "group": "Start"
+    },
+    {
+      "slug": "local-clone",
+      "source": "docs/runbooks/local-postgresql-clone.md",
+      "title": "Run a persistent clone",
+      "description": "Start and recover an isolated PostgreSQL example with per-clone data and credentials.",
+      "group": "Start"
+    },
+    {
+      "slug": "deployment",
+      "source": "docs/deployment.md",
+      "title": "Deploy the application",
+      "description": "Build and serve the application with PostgreSQL, bundled examples and isolated local containers.",
+      "group": "Start"
+    },
+    {
+      "slug": "fixture-provenance",
+      "source": "docs/fixture-provenance.md",
+      "title": "Understand the examples",
+      "description": "Read how synthetic records, supplied findings and scenario permissions support exploration.",
+      "group": "Start"
+    },
+    {
+      "slug": "contracts",
+      "source": "docs/README.md",
+      "title": "Find a source contract",
+      "description": "Choose a reading route through the repository's source-owned contracts.",
+      "group": "Architecture"
+    },
+    {
+      "slug": "database-choices",
+      "source": "docs/database-choices.md",
+      "title": "Choose a database",
+      "description": "Compare PostgreSQL and bundled examples with optional graph, RDF and object-storage extensions.",
+      "group": "Architecture"
+    },
+    {
+      "slug": "postgresql",
+      "source": "docs/postgresql.md",
+      "title": "Persist a local example",
+      "description": "Configure PostgreSQL, initialize owned synthetic records, and understand saved-work recovery.",
+      "group": "Architecture"
+    },
+    {
+      "slug": "graphql",
+      "source": "docs/graphql-read-api.md",
+      "title": "Read the graph",
+      "description": "Understand approved reads, canonical records and the local schema explorer.",
+      "group": "Architecture"
+    },
+    {
+      "slug": "graphql-reference",
+      "generated": "graphql",
+      "title": "GraphQL reference",
+      "description": "Schemas and approved operations generated from their executable source owners.",
+      "group": "Architecture"
+    },
+    {
+      "slug": "permissions",
+      "source": "docs/permission-scenarios.md",
+      "title": "Scope an action",
+      "description": "Follow scenario identity through permissions, reads, commands and recovery.",
+      "group": "Architecture"
+    },
+    {
+      "slug": "themes",
+      "source": "docs/theme-contract.md",
+      "title": "Extend the visual language",
+      "description": "Use typed theme roles while preserving scene geometry and interaction state.",
+      "group": "Architecture"
+    },
+    {
+      "slug": "focused-checks",
+      "source": "docs/runbooks/selective-check-delivery.md",
+      "title": "Choose useful checks",
+      "description": "Select a focused observation, preserve source identity and return meaningful evidence.",
+      "group": "Contribute"
+    },
+    {
+      "slug": "testing-method",
+      "source": ".agents/skills/test-suite-composition/SKILL.md",
+      "title": "Design a discriminating test",
+      "description": "Connect the intended behavior, a plausible fault and an independent expectation.",
+      "group": "Contribute"
+    },
+    {
+      "slug": "documentation",
+      "source": "docs/site/implementation.md",
+      "title": "Extend these documents",
+      "description": "Add an admitted article and build both documentation profiles from the same source.",
+      "group": "Contribute"
+    }
+  ]
+}

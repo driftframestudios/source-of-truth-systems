@@ -1,0 +1,13 @@
+mutation StartWorkspace {
+  startWorkspace {
+    code
+    message
+    available
+    workspace {
+      id
+      createdAt
+      expiresAt
+      eventCount
+    }
+  }
+}

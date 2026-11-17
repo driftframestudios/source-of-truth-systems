@@ -1,0 +1,10 @@
+query ResultDetails($id: ID!, $first: Int = 20, $after: String) {
+  result(id: $id) {
+    id wellId title assayLabel specimenType pipeline runDate reason finding consent
+    artifacts(first: $first, after: $after) {
+      totalCount
+      pageInfo { endCursor hasNextPage }
+      edges { cursor node { id legalHold reusedFrom { id } file { id kind sizeBytes createdAt lifecycleRuleId } } }
+    }
+  }
+}

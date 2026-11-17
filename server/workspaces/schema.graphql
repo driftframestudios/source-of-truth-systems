@@ -1,0 +1,105 @@
+"An isolated, expiring workspace for public example edits."
+type Query {
+  workspaceStatus: WorkspaceStatus!
+  workspaceSnapshot: WorkspaceSnapshot!
+  workspaceSource(id: ID!): WorkspaceSourceResult!
+  workspaceHistory(sourceId: ID!, limit: Int = 20): WorkspaceHistoryResult!
+}
+type Mutation {
+  startWorkspace: WorkspaceStatus!
+  resetWorkspace: WorkspaceStatus!
+  saveSource(input: SaveSourceInput!): WorkspaceCommandResult!
+  restoreSource(input: RestoreSourceInput!): WorkspaceCommandResult!
+}
+enum WorkspaceCode {
+  OK
+  LOCAL
+  ABSENT
+  EXPIRED
+  DENIED
+  INVALID
+  CONFLICT
+  QUOTA
+  UNAVAILABLE
+  MISSING
+}
+type VisitorWorkspace {
+  id: ID!
+  createdAt: String!
+  expiresAt: String!
+  eventCount: Int!
+}
+type WorkspaceSource {
+  id: ID!
+  revision: Int!
+  title: String!
+  description: String!
+  tags: [String!]!
+}
+"The selected example persona, separate from the server-issued workspace."
+type ScenarioActor {
+  principalId: String!
+  roleId: String!
+  environment: String!
+}
+enum WorkspaceAction {
+  save
+  restore
+}
+type WorkspaceEvent {
+  id: ID!
+  sourceId: ID!
+  action: WorkspaceAction!
+  actor: ScenarioActor!
+  createdAt: String!
+  expectedRevision: Int!
+  resultRevision: Int!
+}
+type WorkspaceStatus {
+  code: WorkspaceCode!
+  message: String!
+  available: Boolean!
+  workspace: VisitorWorkspace
+}
+type WorkspaceSnapshot {
+  code: WorkspaceCode!
+  message: String!
+  workspace: VisitorWorkspace
+  sources: [WorkspaceSource!]!
+}
+type WorkspaceSourceResult {
+  code: WorkspaceCode!
+  message: String!
+  workspace: VisitorWorkspace
+  source: WorkspaceSource
+}
+type WorkspaceHistoryResult {
+  code: WorkspaceCode!
+  message: String!
+  workspace: VisitorWorkspace
+  events: [WorkspaceEvent!]!
+}
+type WorkspaceCommandResult {
+  code: WorkspaceCode!
+  message: String!
+  workspace: VisitorWorkspace
+  source: WorkspaceSource
+  changed: Boolean!
+  replayed: Boolean!
+}
+input SourceMetadataInput {
+  title: String!
+  description: String!
+  tags: [String!]!
+}
+input SaveSourceInput {
+  id: ID!
+  expectedRevision: Int!
+  idempotencyKey: ID!
+  metadata: SourceMetadataInput!
+}
+input RestoreSourceInput {
+  id: ID!
+  expectedRevision: Int!
+  idempotencyKey: ID!
+}

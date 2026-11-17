@@ -1,0 +1,70 @@
+services:
+  database:
+    build:
+      context: .
+      target: database
+    environment:
+      POSTGRES_DB: sot_example
+      POSTGRES_PASSWORD: ${SOT_ADMIN_PASSWORD:?Run node scripts/clone.mjs configure}
+      SOT_OWNER_PASSWORD: ${SOT_OWNER_PASSWORD:?Local owner password required}
+      SOT_RUNTIME_PASSWORD: ${SOT_RUNTIME_PASSWORD:?Local runtime password required}
+    volumes:
+      - database:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d sot_example"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+  initialize:
+    image: ${SOT_CLONE_PROJECT:?Local project required}-application
+    build:
+      context: .
+      target: app
+    command: [node, scripts/clone/initialize.mjs]
+    environment:
+      DATABASE_PROVIDER: postgres
+      PGHOST: database
+      PGPORT: "5432"
+      PGDATABASE: sot_example
+      PGUSER: sot_owner
+      PGPASSWORD: ${SOT_OWNER_PASSWORD:?Local owner password required}
+      PGSSLMODE: disable
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: "no"
+  app:
+    image: ${SOT_CLONE_PROJECT:?Local project required}-application
+    build:
+      context: .
+      target: app
+    environment:
+      DATABASE_PROVIDER: postgres
+      PGHOST: database
+      PGPORT: "5432"
+      PGDATABASE: sot_example
+      PGUSER: sot_runtime
+      PGPASSWORD: ${SOT_RUNTIME_PASSWORD:?Local runtime password required}
+      PGSSLMODE: disable
+      PORT: "3000"
+    ports:
+      - "127.0.0.1:${SOT_APP_PORT:?Local application port required}:3000"
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          --input-type=module,
+          -e,
+          'const r=await fetch("http://127.0.0.1:3000/");if(!r.ok)process.exit(1)',
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+volumes:
+  database:

@@ -1,0 +1,63 @@
+/* Profile owns navigation density; scenario and accepted preference state stay in their providers. */
+.profile-workspace {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+.profile-workspace__rail {
+  flex: 0 0 200px;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--sot-shell-inset);
+  border-right: 1px solid var(--sot-shell-border);
+}
+.profile-workspace__identity { padding: 16px 12px; border-bottom: 1px solid var(--sot-shell-border); }
+.profile-workspace__navigation { padding: 12px 0; }
+.profile-workspace__group + .profile-workspace__group { margin-top: 14px; }
+.profile-workspace__group-title {
+  display: block;
+  padding: 0 14px 5px;
+  color: var(--sot-shell-muted);
+  font: 9px/1.5 'JetBrains Mono', monospace;
+}
+.profile-workspace__links button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border-left: 2px solid transparent;
+  color: var(--sot-shell-muted);
+  font: 11px/1.4 'JetBrains Mono', monospace;
+  text-align: left;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.profile-workspace__links button:hover { color: var(--sot-shell-text); background: var(--sot-shell-raised); }
+.profile-workspace__links button[aria-current] {
+  color: var(--sot-shell-text);
+  background: color-mix(in srgb, var(--sot-status-info) 8%, transparent);
+  border-color: var(--sot-status-info);
+}
+.profile-workspace__links button[aria-current] svg { color: var(--sot-status-info); }
+.profile-workspace__links button:focus-visible { outline: 2px solid var(--sot-shell-focus); outline-offset: -2px; }
+.profile-workspace__context { display: grid; gap: 6px; padding: 14px 12px; border-top: 1px solid var(--sot-shell-border); }
+.profile-workspace__context > .profile-workspace__compact-actor { display: none; }
+.profile-workspace__context > div { gap: 8px; flex-wrap: wrap; }
+.profile-workspace__content { flex: 1; min-width: 0; min-height: 0; overflow: auto; }
+.profile-form-row { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 20px; align-items: start; }
+
+/* The compact desktop receiver uses a top rail so the access grid and forms keep their working width. */
+@media (max-width: 1279px) {
+  .profile-workspace { flex-direction: column; }
+  .profile-workspace__rail { flex: 0 0 auto; border-right: 0; border-bottom: 1px solid var(--sot-shell-border); overflow: visible; }
+  .profile-workspace__identity { display: none; }
+  .profile-workspace__navigation { display: flex; flex-wrap: wrap; gap: 12px 18px; padding: 10px 16px; }
+  .profile-workspace__group + .profile-workspace__group { margin-top: 0; }
+  .profile-workspace__group-title { padding: 0 4px 3px; }
+  .profile-workspace__links { display: flex; flex-wrap: wrap; gap: 2px; }
+  .profile-workspace__links button { width: auto; padding: 5px 6px; border-left: 0; border-bottom: 2px solid transparent; border-radius: 3px 3px 0 0; }
+  .profile-workspace__context { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 6px 20px; }
+  .profile-workspace__context > .profile-workspace__compact-actor { display: flex; }
+  .profile-workspace__context > div { justify-content: start; gap: 6px; }
+}

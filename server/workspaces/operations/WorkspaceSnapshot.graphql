@@ -1,0 +1,19 @@
+query WorkspaceSnapshot {
+  workspaceSnapshot {
+    code
+    message
+    workspace {
+      id
+      createdAt
+      expiresAt
+      eventCount
+    }
+    sources {
+      id
+      revision
+      title
+      description
+      tags
+    }
+  }
+}

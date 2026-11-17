@@ -1,0 +1,21 @@
+mutation RestoreSource($input: RestoreSourceInput!) {
+  restoreSource(input: $input) {
+    code
+    message
+    changed
+    replayed
+    workspace {
+      id
+      createdAt
+      expiresAt
+      eventCount
+    }
+    source {
+      id
+      revision
+      title
+      description
+      tags
+    }
+  }
+}

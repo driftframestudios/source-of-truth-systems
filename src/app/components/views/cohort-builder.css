@@ -1,0 +1,70 @@
+.cohort-builder {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr) 20rem;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.cohort-builder__palette { grid-column: 1; }
+.cohort-builder__editor { grid-column: 2; }
+.cohort-builder__compiled { grid-column: 3; }
+.cohort-builder__tools,
+.cohort-builder__summary { display: none; }
+
+/* Both rails stay mounted so switching tools or width preserves local input. */
+@media (max-width: 1279px) {
+  .cohort-builder {
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .cohort-builder__editor { grid-area: 1 / 1 / 3 / 2; }
+  .cohort-builder__palette,
+  .cohort-builder__compiled { grid-area: 2 / 2; min-width: 0; }
+  .cohort-builder__palette {
+    border-right: 0;
+    border-left: 1px solid color-mix(in srgb, var(--sot-shell-strong-border) 6%, transparent);
+  }
+  .cohort-builder[data-support-pane="facets"] .cohort-builder__compiled,
+  .cohort-builder[data-support-pane="rule"] .cohort-builder__palette { display: none; }
+
+  .cohort-builder__tools {
+    grid-area: 1 / 2;
+    display: flex;
+    gap: .3rem;
+    padding: .5rem;
+    border-left: 1px solid color-mix(in srgb, var(--sot-shell-strong-border) 6%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--sot-shell-strong-border) 6%, transparent);
+    background: var(--sot-shell-inset);
+  }
+  .cohort-builder__tools button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .3rem;
+    flex: 1;
+    padding: .4rem .2rem;
+    border: 1px solid transparent;
+    border-radius: .25rem;
+    font: 10px var(--font-mono, monospace);
+    color: var(--sot-shell-secondary);
+  }
+  .cohort-builder__tools button[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--sot-status-info) 35%, transparent);
+    background: color-mix(in srgb, var(--sot-status-info) 10%, transparent);
+    color: var(--sot-status-info);
+  }
+  .cohort-builder__summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .85rem;
+    padding: .5rem 1rem;
+    color: var(--sot-shell-secondary);
+    font: 10px var(--font-mono, monospace);
+    border-bottom: 1px solid color-mix(in srgb, var(--sot-shell-strong-border) 6%, transparent);
+  }
+}
+
+/* The compiled rule is a wrapping reading panel, not a width-measured table. */
+.cohort-builder__compiled [data-slot="scroll-area-viewport"] > div {
+  display: block !important;
+}

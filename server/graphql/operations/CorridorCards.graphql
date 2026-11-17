@@ -1,0 +1,9 @@
+query CorridorCards($laneId: ID, $first: Int = 20, $after: String) {
+  corridor {
+    cards(laneId: $laneId, first: $first, after: $after) {
+      totalCount
+      pageInfo { endCursor hasNextPage }
+      edges { cursor node { id label kind position note lane { id label } } }
+    }
+  }
+}

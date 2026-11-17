@@ -1,0 +1,17 @@
+query WellHistory($plateId: ID!, $id: ID!, $first: Int = 12, $after: String) {
+  well(plateId: $plateId, id: $id) {
+    id plateId
+    history(first: $first, after: $after) {
+      totalCount
+      pageInfo { endCursor hasNextPage }
+      edges {
+        cursor
+        node {
+          id sequence kind status label title runDate pipeline reason finding
+          physicalPlateId physicalWellId
+          supersedes { id }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+import { test, expect } from '@playwright/test';
+
+for (const width of [1024, 1512]) {
+  test(`Profile keeps scenario, inspected person and preference routes distinct at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width === 1024 ? 768 : 982 });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Profile', exact: true }).first().click();
+    await page.locator('#initial-load').waitFor({ state: 'hidden' });
+    const navigation = page.getByRole('navigation', { name: 'Profile sections' });
+    const workspace = page.getByRole('region', { name: 'Profile workspace' });
+    await expect(navigation.getByRole('group', { name: 'Scenario & access' })).toBeVisible();
+    await expect(navigation.getByRole('group', { name: 'Your workspace' })).toBeVisible();
+    await expect(navigation.getByRole('group', { name: 'Tools & examples' })).toBeVisible();
+    const persona = workspace.getByRole('combobox', { name: 'Showcase persona' });
+    const actor = await persona.inputValue();
+    await workspace.getByRole('button', { name: 'Administrator', exact: true }).click();
+    await navigation.getByRole('button', { name: 'Access Grid', exact: true }).click();
+    await expect(navigation.getByRole('button', { name: 'Access Grid' })).toHaveAttribute('aria-current', 'page');
+    const inspect = workspace.getByRole('combobox', { name: 'Inspect access for' });
+    const other = await inspect.locator('option').evaluateAll((options, actor) => options.find(option => option.value !== actor).value, actor);
+    await inspect.selectOption(other);
+    const grant = workspace.getByRole('button', { name: /^Plate Map · US East ·/ });
+    await grant.click();
+    const draftGrant = await grant.getAttribute('aria-label');
+    await page.setViewportSize({ width: width === 1024 ? 1512 : 1024, height: 900 });
+    await expect(inspect).toHaveValue(other);
+    await expect(grant).toHaveAccessibleName(draftGrant);
+    await expect(workspace.getByRole('button', { name: 'Save grants', exact: true })).toBeEnabled();
+    await page.setViewportSize({ width, height: width === 1024 ? 768 : 982 });
+    await expect(workspace.getByText(/^Acting as Platform Lead/)).toBeVisible();
+    await workspace.getByRole('button', { name: 'Save grants', exact: true }).scrollIntoViewIfNeeded();
+    const grid = workspace.locator('table');
+    const gridBounds = await grid.boundingBox();
+    const bounds = await workspace.boundingBox();
+    expect(gridBounds.x + gridBounds.width).toBeLessThanOrEqual(bounds.x + bounds.width);
+    expect(await workspace.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+    await navigation.getByRole('button', { name: 'Profile', exact: true }).click();
+    await expect(persona).toHaveValue(actor);
+    await navigation.getByRole('button', { name: 'Preferences', exact: true }).click();
+    await workspace.getByRole('radio', { name: 'Light', exact: true }).check();
+    await workspace.getByRole('switch', { name: 'Informational toasts', exact: true }).click();
+    await navigation.getByRole('button', { name: 'Notifications', exact: true }).click();
+    await expect(workspace.getByRole('switch', { name: 'Informational toasts', exact: true })).not.toBeChecked();
+    await page.setViewportSize({ width: width === 1024 ? 1512 : 1024, height: 900 });
+    await expect(navigation.getByRole('button', { name: 'Notifications', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(workspace.getByRole('switch', { name: 'Informational toasts', exact: true })).not.toBeChecked();
+    await page.setViewportSize({ width, height: width === 1024 ? 768 : 982 });
+    await navigation.getByRole('button', { name: 'Access Grid', exact: true }).click();
+    await page.screenshot({ path: `.visual-runs/profile-access-after-${width}.png` });
+    await navigation.getByRole('button', { name: 'Profile', exact: true }).click();
+    await page.screenshot({ path: `.visual-runs/profile-after-${width}.png` });
+  });
+}

@@ -1,0 +1,19 @@
+# Plate workspace at compact desktop widths
+
+The Plate scene retains room for the selected sample and its result record at 1024px. Its scene-preserving layout sits alongside the other [bounded record workspaces](workspace-layout.md).
+
+## Composition and ownership
+
+`LanesView.tsx` holds the local disclosure selection; `PlateWorkspace.tsx` renders the two reading rails and owns their entry/return focus. At desktop widths from 1024 through 1359px, **Sample histories** and **Sample details** remain visible above the scene. Each opens its existing rail over the scene and focuses its close button for immediate keyboard entry; opening one closes the other. Choosing a story returns focus to its trigger and reveals the selected result. A rail's close button or Escape closes that rail and restores trigger focus. Escape elsewhere retains the Plate's existing release behavior.
+
+From 1360px, both rails sit beside the scene as before. Below 1024px, the existing mobile Plate composition takes over. The compact disclosure does not change the scene's dimensions or refit its camera when it opens. Its scrollable contents stay mounted while closed. Visual order and DOM order remain histories, scene, sample details.
+
+This arrangement keeps the three-column result tray instead of introducing a second desktop record renderer. Persistent compact rails left too little room for those columns; a separate modal would interrupt the sample/result relationship. Local overlays leave the current well, result, pin state, request/source feedback and retry path owned by the existing exploration and history services. The toolbar identifies the selected well even when its details are closed. The result header can wrap its metadata while its close and pin controls remain inside the tray.
+
+`plate.css` owns the desktop rail geometry and uses existing shell tokens. The Plate camera, scene motion, lenses, history spacing, depth, result commands and mobile layouts retain their existing owners. The empty sample rail now invites selecting a well instead of displaying the Corridor drafting key.
+
+## Receiving evidence
+
+`tests/browser/plate-workspace.spec.mjs` checks the 1024px scene width, rail exclusivity, visible selection and source state, keyboard close/return, unchanged scene width during disclosure, one read for the selected history, the bounded record close control, and retained R2 selection across 1512px and the 1023px mobile boundary. Existing Plate layout and history-feedback checks cover spacing/depth, pinned selection, loading feedback, late-response isolation and cached reads. Settled before/after captures cover 1024×768 and 1512×982, with a mobile-boundary capture at 1023×768.
+
+These observations establish the Plate layout and its retained operations. They leave the other workspace families and live hosted-database behavior to their own receiving checks.

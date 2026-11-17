@@ -1,0 +1,73 @@
+name: Browser checks
+on:
+  workflow_dispatch:
+    inputs:
+      run_checks:
+        description: Run selected checks (clear to skip without allocating a runner)
+        type: boolean
+        default: true
+      suite:
+        description: Chromium journey population
+        type: choice
+        options: [scene-smoke, all]
+        default: scene-smoke
+      include_core:
+        description: Also run types, 3D guard and unit/API checks in this job
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: browser-${{ github.ref }}-${{ inputs.run_checks }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    if: inputs.run_checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/prepare
+      - name: Prepare the selected browser
+        env:
+          SUITE: ${{ inputs.suite }}
+        run: |
+          case "$SUITE" in
+            scene-smoke)
+              browser_path="$(command -v google-chrome || true)"
+              if [ -n "$browser_path" ] && [ -x "$browser_path" ]; then
+                printf 'BROWSER_EXECUTABLE=%s\n' "$browser_path" >> "$GITHUB_ENV"
+                printf 'Scene smoke uses runner Chrome: %s\n' "$("$browser_path" --version)" >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+              ;;
+            all) ;;
+            *) exit 2 ;;
+          esac
+          pnpm exec playwright install --with-deps chromium
+          printf '%s\n' 'Using Chromium matched to the locked Playwright version.' >> "$GITHUB_STEP_SUMMARY"
+      - if: inputs.include_core
+        run: pnpm typecheck
+      - if: inputs.include_core
+        run: pnpm check:3d
+      - run: pnpm build
+      - if: inputs.include_core
+        run: pnpm test
+      - name: Exercise the selected journeys
+        env:
+          SUITE: ${{ inputs.suite }}
+        run: |
+          case "$SUITE" in
+            all) pnpm test:browser ;;
+            scene-smoke) pnpm test:browser tests/browser/core.spec.mjs tests/browser/responsive-exploration.spec.mjs tests/browser/guided-exploration.spec.mjs ;;
+            *) exit 2 ;;
+          esac
+      - name: Record the observation
+        env:
+          SUITE: ${{ inputs.suite }}
+          CORE: ${{ inputs.include_core }}
+        run: |
+          printf 'Browser population: %s; additional core checks: %s.\n' "$SUITE" "$CORE" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' 'Selected journeys passed against the production build and synthetic examples.' 'The three hosted-workspace browser cases require their separate disposable database route. Browser traces and screenshots remain runner-local.' >> "$GITHUB_STEP_SUMMARY"

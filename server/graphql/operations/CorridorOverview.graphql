@@ -1,0 +1,11 @@
+query CorridorOverview($first: Int = 20, $after: String) {
+  corridor {
+    id
+    asOf
+    lanes(first: $first, after: $after) {
+      totalCount
+      pageInfo { endCursor hasNextPage }
+      edges { cursor node { id label shortLabel description stage order color accentColor } }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+query WorkspaceHistory($sourceId: ID!, $limit: Int = 20) {
+  workspaceHistory(sourceId: $sourceId, limit: $limit) {
+    code
+    message
+    workspace {
+      id
+      createdAt
+      expiresAt
+      eventCount
+    }
+    events {
+      id
+      sourceId
+      action
+      actor {
+        principalId
+        roleId
+        environment
+      }
+      createdAt
+      expectedRevision
+      resultRevision
+    }
+  }
+}

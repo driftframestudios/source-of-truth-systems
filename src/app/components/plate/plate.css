@@ -1,0 +1,90 @@
+/* Upright result-stack plate view — keyframes for the lock-in, disc
+   pulses and the gossamer thread shimmer. Leaf elements only: nothing
+   here may land on a preserve-3d container (see check-3d-flattening). */
+
+@keyframes plate-snap {
+  0%   { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0), inset 0 0 20px rgba(0, 0, 0, 0.4); }
+  16%  { box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.95), 0 0 48px rgba(45, 212, 191, 0.55), inset 0 0 20px rgba(0, 0, 0, 0.4); }
+  100% { box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.28), 0 0 0 rgba(45, 212, 191, 0), inset 0 0 20px rgba(0, 0, 0, 0.4); }
+}
+.plate-snap { animation: plate-snap 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes plate-sweep {
+  0%   { transform: translateZ(1.5px) translateX(0); opacity: 0; }
+  12%  { opacity: 1; }
+  100% { transform: translateZ(1.5px) translateX(var(--sweep, 440px)); opacity: 0; }
+}
+.plate-sweep { animation: plate-sweep 640ms cubic-bezier(0.45, 0, 0.2, 1) both; }
+
+@keyframes disc-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+  50%      { box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.5); }
+}
+.disc-pulse { animation: disc-pulse 1.6s ease-in-out infinite; }
+
+/* Immediate hover feedback on a disc face (leaf element), ahead of the
+   hover-intent delay that drops the thread. */
+.result-disc { transition: filter 120ms ease; }
+.result-disc:hover, .result-disc:focus-visible { filter: brightness(1.35) saturate(1.1); }
+
+@keyframes thread-shimmer {
+  from { stroke-dashoffset: var(--thread-len, 400); }
+  to   { stroke-dashoffset: calc(var(--thread-len, 400) * -1); }
+}
+.thread-shimmer { animation: thread-shimmer 2.6s cubic-bezier(0.45, 0, 0.55, 1) 0.9s infinite; }
+
+@keyframes lock-shackle {
+  0%   { transform: translateY(-3px) rotate(-14deg); }
+  60%  { transform: translateY(1px) rotate(3deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+.lock-shackle { animation: lock-shackle 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both; transform-origin: 50% 80%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .plate-snap, .plate-sweep, .disc-pulse, .thread-shimmer, .lock-shackle { animation: none !important; }
+}
+
+/* Persistent legends share the exact disc paints in overview and history. */
+.plate-lens-legend { display: flex; flex-wrap: wrap; align-items: center; flex-basis: 100%; gap: 5px 12px; color: var(--sot-shell-muted); font: 10px/1.5 'JetBrains Mono', monospace; }
+.plate-lens-legend > span { display: inline-flex; align-items: center; gap: 5px; }
+.plate-lens-legend__title { color: var(--sot-shell-selected-text); text-transform: uppercase; letter-spacing: .06em; }
+.plate-lens-legend i { width: 11px; height: 11px; flex: 0 0 11px; border: 1.5px solid; border-radius: 50%; }
+.plate-history-badge { position: absolute; top: 12px; left: 12px; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 7px; max-width: calc(100% - 166px); border: 1px solid; border-radius: 12px; padding: 6px 9px; }
+.plate-history-badge__hint { color: var(--sot-shell-muted); font: 9px/1.4 'JetBrains Mono', monospace; }
+.plate-camera-controls { position: absolute; left: 50%; transform: translateX(-50%); z-index: 35; display: flex; align-items: center; gap: 4px; max-width: calc(100% - 20px); padding: 4px; border: 1px solid var(--sot-shell-border); border-radius: 9px; background: var(--sot-shell-inset); }
+.plate-camera-controls button, .plate-camera-controls summary { display: flex; align-items: center; justify-content: center; min-width: 30px; min-height: 30px; padding: 5px 8px; border: 1px solid var(--sot-shell-border); border-radius: 6px; color: var(--sot-shell-text); background: var(--sot-shell-surface); font: 10px/1.2 'JetBrains Mono', monospace; cursor: pointer; white-space: nowrap; }
+.plate-camera-controls button:disabled { opacity: .4; cursor: default; }
+.plate-camera-controls button:hover, .plate-camera-controls summary:hover { border-color: var(--sot-shell-strong-border); color: var(--sot-shell-selected-text); }
+.plate-camera-controls button:focus-visible, .plate-camera-controls summary:focus-visible { outline: 2px solid var(--sot-shell-focus); outline-offset: 2px; }
+.plate-camera-controls details > div { position: absolute; right: 0; bottom: calc(100% + 5px); display: flex; gap: 4px; padding: 6px; border: 1px solid var(--sot-shell-border); border-radius: 9px; background: var(--sot-shell-surface); }
+.plate-camera-controls summary { list-style: none; }
+.plate-camera-controls summary::-webkit-details-marker { display: none; }
+.plate-camera-controls summary::after { content: '⌃'; margin-left: 5px; }
+.plate-camera-controls--compact button, .plate-camera-controls--compact summary { min-width: 40px; min-height: 44px; padding-inline: 6px; font-size: 10px; }
+.plate-camera-controls--compact > button:nth-child(3), .plate-camera-controls--compact > button:nth-child(4) { font-size: 18px; }
+.mobile-plate .plate-lens-legend { padding: 6px 0 10px; font-size: 10px; gap: 6px 10px; }
+.plate-workspace { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
+.plate-workspace__body { position: relative; display: flex; flex: 1; min-width: 0; min-height: 0; }
+.plate-workspace__tools, .plate-workspace__rail-head { display: none; }
+.plate-workspace__rail { display: flex; flex-direction: column; flex-shrink: 0; min-height: 0; background: var(--sot-shell-inset); }
+.plate-workspace__rail--histories { width: 14rem; }
+.plate-workspace__rail--sample { width: 18rem; border-left: 1px solid var(--sot-shell-border); }
+.plate-workspace__rail-content { flex: 1; min-height: 0; overflow-y: auto; }
+.plate-workspace__rail--histories .plate-workspace__rail-content > div { width: 100%; min-height: 100%; }
+
+/* Keep both reading rails at roomy widths. Compact desktop keeps the same
+   mounted records behind explicit, local disclosures, leaving the camera and
+   result tray their full width. Mobile has its own Plate composition. */
+@media (min-width: 1024px) and (max-width: 1359px) {
+  .plate-workspace__tools { display: flex; gap: 8px; padding: 5px 12px; border-bottom: 1px solid var(--sot-shell-border); background: var(--sot-shell-inset); }
+  .plate-workspace__tools button { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 3px 8px; border: 1px solid var(--sot-shell-border); border-radius: 4px; color: var(--sot-shell-secondary); font: 10px 'JetBrains Mono', monospace; }
+  .plate-workspace__tools button[aria-expanded="true"] { background: var(--sot-shell-raised); color: var(--sot-shell-selected-text); border-color: var(--sot-shell-selected-text); }
+  .plate-workspace__tools button[aria-expanded="true"] svg { transform: rotate(180deg); }
+  .plate-workspace__rail { display: none; position: absolute; inset-block: 8px; z-index: 40; width: 288px; max-width: calc(100% - 24px); border: 1px solid var(--sot-shell-border); border-radius: 7px; box-shadow: 0 6px 18px color-mix(in srgb, var(--sot-shell-text) 12%, transparent); }
+  .plate-workspace__rail[data-open="true"] { display: flex; }
+  .plate-workspace__rail--histories { left: 12px; }
+  .plate-workspace__rail--sample { right: 12px; }
+  .plate-workspace__rail-head { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; padding: 6px 9px; border-bottom: 1px solid var(--sot-shell-border); color: var(--sot-shell-secondary); font: 10px 'JetBrains Mono', monospace; }
+  .plate-workspace__rail-head button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 4px; }
+  .plate-workspace__rail-head button:hover { background: var(--sot-shell-raised); }
+}

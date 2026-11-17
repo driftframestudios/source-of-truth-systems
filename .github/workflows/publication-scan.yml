@@ -1,0 +1,65 @@
+name: Publication scan
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      run_checks:
+        description: Inspect the selected scope (clear to skip without allocating a runner)
+        type: boolean
+        default: true
+      scope:
+        description: Source, local textual history, or built release artifacts
+        type: choice
+        options: [tree, export, history, release]
+        default: export
+defaults:
+  run:
+    shell: bash
+permissions:
+  contents: read
+concurrency:
+  group: publication-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.run_checks }}-${{ inputs.scope }}
+  cancel-in-progress: true
+jobs:
+  inspect:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.run_checks) ||
+      (github.event_name == 'pull_request' && !github.event.pull_request.draft && vars.PUBLICATION_CHECKS_AUTOMATIC != 'false')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - if: inputs.scope != 'release'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          package-manager-cache: false
+      - if: inputs.scope == 'release'
+        uses: ./.github/actions/prepare
+      - run: npm run test:security
+      - run: npm run security:install
+      - run: npm run test:security:engine
+      - name: Inspect changed committed source
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_COMMIT: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/security/scan-secret-material.mjs changed "$BASE_COMMIT" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Inspect selected manual source scope
+        if: github.event_name == 'workflow_dispatch' && inputs.scope != 'release'
+        env:
+          SCOPE: ${{ inputs.scope }}
+        run: node scripts/security/scan-secret-material.mjs "$SCOPE" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Inspect the built release closure
+        if: inputs.scope == 'release'
+        run: |
+          node scripts/security/scan-secret-material.mjs export HEAD | tee -a "$GITHUB_STEP_SUMMARY"
+          npm run build
+          node scripts/security/scan-secret-material.mjs artifact dist | tee -a "$GITHUB_STEP_SUMMARY"
+          node scripts/security/scan-secret-material.mjs artifact build | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Record scope and receiving boundary
+        run: |
+          printf '%s\n' 'The selected scope passed its fresh canary and pinned detector. Separate metadata, rights, visibility and hosted checks retain their owners. Scanner caches, raw reports and release files are not uploaded by this workflow.' >> "$GITHUB_STEP_SUMMARY"

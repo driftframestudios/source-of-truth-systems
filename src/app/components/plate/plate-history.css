@@ -1,0 +1,44 @@
+.plate-history-source {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 8px 12px;
+  background: var(--sot-shell-surface);
+  border-block: 1px solid var(--sot-shell-border);
+  color: var(--sot-shell-muted);
+  font: 10px/1.5 var(--font-mono, ui-monospace, monospace);
+}
+.plate-history-source__label { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.plate-history-source strong { color: var(--sot-shell-text); font-weight: 500; }
+.plate-history-source[data-history-source='STORED'] strong { color: var(--sot-shell-selected-text); }
+.plate-history-source__context { margin-left: auto; color: var(--sot-shell-muted); }
+.plate-history-source button { color: var(--sot-shell-selected-text); text-decoration: underline; text-underline-offset: 3px; }
+.mobile-plate .plate-history-source { margin-block: 12px; border: 1px solid var(--sot-shell-border); border-radius: 8px; font-size: 11px; }
+.mobile-plate .plate-history-source button { min-height: 32px; }
+
+/* Stable local receipt: animation follows the request, never the camera. */
+.plate-history-source--primary { border-top: 0; border-radius: 7px 7px 0 0; gap: 6px 10px; }
+.plate-history-source__activity {
+  display: grid;
+  grid-template-columns: 10px 5px 10px;
+  grid-template-rows: 5px 8px;
+  gap: 2px;
+  flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+  pointer-events: none;
+}
+.plate-history-source__activity[data-pending='true'] { opacity: 0.7; }
+.plate-history-source__activity i { background: var(--sot-status-info); border-radius: 1px; }
+.plate-history-source__activity i:nth-child(2n) { background: var(--sot-shell-selected-text); }
+.plate-history-source__activity i:nth-child(3n) { background: var(--sot-status-violet); }
+.plate-history-source__activity[data-pending='true'] i { animation: history-tile 1200ms ease-in-out infinite alternate; }
+.plate-history-source__activity i:nth-child(2n) { animation-delay: -400ms; }
+.plate-history-source__activity i:nth-child(3n) { animation-delay: -800ms; }
+@keyframes history-tile { from { opacity: 0.3; } to { opacity: 0.9; } }
+@media (prefers-reduced-motion: reduce) {
+  .plate-history-source__activity { transition: none; }
+  .plate-history-source__activity[data-pending='true'] i { animation: none; }
+}

@@ -1,0 +1,34 @@
+.developer-docs-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--sot-shell-border);
+  color: var(--sot-shell-text);
+  font: 0.7rem/1.4 monospace;
+  text-decoration: none;
+}
+.developer-docs-link > span {
+  flex: 1;
+}
+.developer-docs-link small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--sot-shell-muted);
+  font-size: 0.6rem;
+}
+.developer-docs-link > svg {
+  flex-shrink: 0;
+}
+.developer-docs-link:hover {
+  color: var(--sot-status-info);
+}
+.developer-docs-link:focus-visible {
+  outline: 2px solid var(--sot-status-info);
+  outline-offset: -2px;
+}
+.developer-docs-link--navigation {
+  margin: 0;
+  padding: 0.7rem 1rem;
+}

@@ -1,0 +1,97 @@
+import { test, expect } from '@playwright/test';
+
+test('appearance repaints the actual corridor without replacing its camera, and retains accepted edits', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  const appearance = page.getByRole('group', { name: 'Appearance', exact: true });
+  const selectMode = (mode) => appearance.getByRole('radio', { name: { dark: 'Dark', light: 'Light', contrast: 'High contrast' }[mode], exact: true }).check();
+  await expect(appearance.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
+  const camera = page.locator('[data-corridor-camera]');
+  const pitch = page.getByRole('slider', { name: 'Corridor pitch' });
+  await pitch.focus();
+  await page.keyboard.press('ArrowLeft');
+  const value = await pitch.inputValue();
+  const transform = await camera.evaluate((node) => node.style.transform);
+  await camera.evaluate((node) => { node.dataset.retainedCamera = 'yes'; });
+  const surface = page.locator('canvas').locator('..');
+  const expectedBackground = { dark: 'rgb(10, 17, 32)', light: 'rgb(228, 237, 243)', contrast: 'rgb(0, 0, 0)' };
+  const expectedText = { dark: 'rgb(200, 216, 238)', light: 'rgb(23, 45, 69)', contrast: 'rgb(255, 255, 255)' };
+  for (const mode of ['dark', 'light', 'contrast']) {
+    await selectMode(mode);
+    await expect(surface).toHaveCSS('background-color', expectedBackground[mode]);
+    await expect(page.getByText('Lanes', { exact: true }).first()).toHaveCSS('color', expectedText[mode]);
+    await expect(camera).toHaveAttribute('data-retained-camera', 'yes');
+    await expect(pitch).toHaveValue(value);
+    expect(await camera.evaluate((node) => node.style.transform)).toBe(transform);
+    await expect(page.locator('[data-corridor-flag]')).not.toHaveCount(0);
+    await page.screenshot({ path: `.visual-runs/theme-corridor-${mode}.png` });
+  }
+  await page.getByRole('button', { name: /^Specimens/ }).click();
+  const details = page.getByRole('article', { name: 'SPX-2026-0481 card', exact: true });
+  await details.getByRole('button', { name: 'hold', exact: true }).click();
+  await selectMode('light');
+  await expect(details.getByRole('button', { name: '→ release hold', exact: true })).toBeVisible();
+  await expect(page.getByText('orders held', { exact: true }).locator('..')).toContainText('3');
+  await page.screenshot({ path: '.visual-runs/theme-specimen-light.png' });
+  await page.getByRole('button', { name: /^Biomarkers/ }).click();
+  await page.getByRole('button', { name: /^Specimens/ }).click();
+  await expect(appearance.getByRole('radio', { name: 'Light', exact: true })).toBeChecked();
+  await expect(page.getByText('orders held', { exact: true }).locator('..')).toContainText('3');
+  await page.reload();
+  await expect(appearance.getByRole('radio', { name: 'Light', exact: true })).toBeChecked();
+  await expect(surface).toHaveCSS('background-color', expectedBackground.light);
+  expect(errors).toEqual([]);
+});
+
+test('compact appearance preserves corridor filters and selected plate history', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  const appearance = page.getByRole('combobox', { name: 'Appearance', exact: true });
+  await page.getByRole('button', { name: 'Explore', exact: true }).click();
+  await page.getByRole('button', { name: 'All lanes', exact: true }).click();
+  await page.getByRole('searchbox').fill('Sample Intake');
+  await page.getByRole('button', { name: 'Show corridor', exact: true }).click();
+  await appearance.selectOption('light');
+  await expect(page.locator('.mobile-corridor-step')).toHaveCount(1);
+  await expect(page.locator('.mobile-corridor-stage')).toHaveCSS('background-color', 'rgb(228, 237, 243)');
+  await page.screenshot({ path: '.visual-runs/theme-mobile-corridor-light.png' });
+  await page.getByRole('button', { name: 'Plate', exact: true }).click();
+  await page.getByText('All result stories & lifecycle policies', { exact: true }).click();
+  await page.getByRole('button', { name: /^C3 VUS reanalysis/ }).click();
+  const record = page.locator('.plate-compact-record');
+  await expect(record.getByRole('tab', { name: 'R1', exact: true })).toBeVisible();
+  await record.getByRole('tab', { name: 'R2', exact: true }).click();
+  await appearance.selectOption('contrast');
+  await expect(record.getByRole('tab', { name: 'R2', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('[data-plate-phase]')).toHaveAttribute('data-plate-phase', 'locked');
+  await page.screenshot({ path: '.visual-runs/theme-mobile-history-contrast.png' });
+  await page.getByRole('button', { name: 'Corridor', exact: true }).click();
+  await expect(page.locator('.mobile-corridor-step')).toHaveCount(1);
+  await expect(appearance).toHaveValue('contrast');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  expect(errors).toEqual([]);
+});
+
+test('desktop appearance is one keyboard-operable radio group and fits a compact desktop header', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /^Presentations/ }).click();
+  const appearance = page.getByRole('group', { name: 'Appearance', exact: true });
+  await expect(page.getByRole('combobox', { name: 'Appearance', exact: true })).toHaveCount(0);
+  const dark = appearance.getByRole('radio', { name: 'Dark', exact: true });
+  await dark.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(appearance.getByRole('radio', { name: 'Light', exact: true })).toBeChecked();
+  await expect(appearance.getByRole('radio', { checked: true })).toHaveCount(1);
+  await page.keyboard.press('ArrowRight');
+  await expect(appearance.getByRole('radio', { name: 'High contrast', exact: true })).toBeChecked();
+  const rightControls = await appearance.locator('..').boundingBox();
+  const header = await appearance.locator('..').locator('..').boundingBox();
+  expect(rightControls.x + rightControls.width).toBeLessThanOrEqual(header.x + header.width);
+  expect(rightControls.y).toBeGreaterThanOrEqual(header.y);
+  expect(rightControls.y + rightControls.height).toBeLessThanOrEqual(header.y + header.height);
+  await page.screenshot({ path: '.visual-runs/appearance-radio-desktop-1024.png' });
+});

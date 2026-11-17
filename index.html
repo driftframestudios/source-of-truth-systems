@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="<!-- figma:lang -->">
+  <head>
+    <!-- figma:head-start -->
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title><!-- figma:title --></title>
+    <link rel="stylesheet" href="/src/app/components/loading/plate-loading.css" />
+    <script id="initial-load-bootstrap">
+      // This handler must run before the entry module can fail to download.
+      window.addEventListener('error', function (event) {
+        if (!(event.target instanceof HTMLScriptElement)) return;
+        const showFailure = function () {
+          const carrier = document.getElementById('initial-load');
+          if (carrier) carrier.dataset.phase = 'failed';
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showFailure, { once: true });
+        else showFailure();
+      }, true);
+      document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('initial-load-retry')?.addEventListener('click', function () { location.reload(); });
+      }, { once: true });
+    </script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      #root {
+        height: 100%;
+      }
+    </style>
+    <!-- figma:head-end -->
+  </head>
+  <body>
+    <!-- figma:body-start -->
+    <!-- First-paint carrier shares its composition with PlateLoading.tsx. -->
+    <div id="initial-load" class="plate-loading" data-phase="waiting" role="status">
+      <div class="plate-loading__tiles" aria-hidden="true"><i style="--cell:0"></i><i style="--cell:1"></i><i style="--cell:2"></i><i style="--cell:3"></i><i style="--cell:4"></i><i style="--cell:5"></i><i style="--cell:6"></i><i style="--cell:7"></i><i style="--cell:8"></i><i style="--cell:9"></i><i style="--cell:10"></i><i style="--cell:11"></i></div>
+      <div class="plate-loading__graphic" aria-hidden="true"><div class="plate-loading__plate"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <p>Initializing system…</p>
+      <div class="plate-loading__failure"><p>The application couldn’t load.</p><button id="initial-load-retry" type="button">Reload to try again</button></div>
+    </div>
+    <noscript><style>#initial-load { display: none; }</style><p>Enable JavaScript to explore Source of Truth for Life Sciences.</p></noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- figma:body-end -->
+  </body>
+</html>

@@ -1,0 +1,19 @@
+query WorkspaceSource($id: ID!) {
+  workspaceSource(id: $id) {
+    code
+    message
+    workspace {
+      id
+      createdAt
+      expiresAt
+      eventCount
+    }
+    source {
+      id
+      revision
+      title
+      description
+      tags
+    }
+  }
+}

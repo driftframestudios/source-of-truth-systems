@@ -1,0 +1,36 @@
+.artifact-workspace__cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.artifact-workspace__detail {
+  flex: 0 0 20rem;
+  min-width: 0;
+}
+
+/* Reading/form panels wrap; only the comparison matrix owns horizontal pan. */
+.artifact-workspace [data-slot="scroll-area-viewport"] > div {
+  display: block !important;
+}
+
+@media (max-width: 1279px) {
+  .artifact-workspace[data-selected="true"] .artifact-workspace__gallery {
+    display: none;
+  }
+  .artifact-workspace__detail {
+    flex: 1;
+    border-left: 0;
+  }
+  .artifact-workspace__detail-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .artifact-workspace__local {
+    padding: 1rem;
+    border: 1px solid color-mix(in srgb, var(--sot-shell-strong-border) 6%, transparent);
+    border-radius: .375rem;
+    background: var(--sot-shell-inset);
+  }
+}

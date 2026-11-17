@@ -1,0 +1,293 @@
+"""
+Public synthetic scenarios. Canonical policy scopes Plate records and fields;
+Corridor describes the shared workflow.
+"""
+type Query {
+  dataSource: DataSource!
+  corridor: Corridor!
+  plate(id: ID!): Plate
+  well(plateId: ID!, id: ID!): Well
+  result(id: ID!): Result
+}
+enum DataMode {
+  STORED
+  EXAMPLE
+}
+type DataSource {
+  mode: DataMode!
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+}
+
+type Corridor {
+  id: ID!
+  asOf: String!
+  lanes(first: Int = 20, after: String): LaneConnection!
+  cards(laneId: ID, first: Int = 20, after: String): CardConnection!
+  connections(first: Int = 20, after: String): WorkflowConnection!
+}
+enum LaneStage {
+  wet_lab
+  dry_lab
+  interpretation
+}
+enum CardKind {
+  process
+  state_major
+  state_minor
+  control
+  nested
+}
+enum ConnectionKind {
+  flow
+  reciprocal
+  review
+  deferred
+}
+type Lane {
+  id: ID!
+  label: String!
+  shortLabel: String!
+  description: String!
+  stage: LaneStage!
+  order: Int!
+  color: String!
+  accentColor: String!
+}
+type Card {
+  id: ID!
+  label: String!
+  kind: CardKind!
+  position: Float!
+  note: String
+  lane: Lane!
+}
+type WorkflowLink {
+  id: ID!
+  kind: ConnectionKind!
+  from: Card!
+  to: Card!
+}
+type LaneEdge {
+  cursor: String!
+  node: Lane!
+}
+type LaneConnection {
+  edges: [LaneEdge!]!
+  totalCount: Int!
+  pageInfo: PageInfo!
+}
+type CardEdge {
+  cursor: String!
+  node: Card!
+}
+type CardConnection {
+  edges: [CardEdge!]!
+  totalCount: Int!
+  pageInfo: PageInfo!
+}
+type WorkflowEdge {
+  cursor: String!
+  node: WorkflowLink!
+}
+type WorkflowConnection {
+  edges: [WorkflowEdge!]!
+  totalCount: Int!
+  pageInfo: PageInfo!
+}
+
+type Plate {
+  id: ID!
+  asOf: String!
+  rows: Int!
+  columns: Int!
+  wells(first: Int = 20, after: String): WellConnection!
+}
+enum WellRole {
+  sample
+  positive_control
+  negative_control
+  empty
+}
+enum Consent {
+  active
+  pending
+  rescinded
+  expired
+}
+type Well {
+  """
+  Coordinate within its plate, for example C3. Use plateId with id for lookup.
+  """
+  id: ID!
+  plateId: ID!
+  asOf: String!
+  row: Int!
+  column: Int!
+  role: WellRole!
+  sampleId: ID
+  assay: String
+  consent: Consent
+  contaminationProbability: Float
+  corridorCard: Card
+  history(first: Int = 20, after: String): ResultConnection!
+}
+enum ResultKind {
+  primary
+  top_up
+  reprep
+  reanalysis
+  longitudinal
+  matched_normal
+  orthogonal
+  reflex
+  control
+}
+enum ResultStatus {
+  reportable
+  superseded
+  failed_qc
+  in_progress
+  held
+  cancelled
+  informational
+}
+type Result {
+  id: ID!
+  wellId: ID!
+  sequence: Int!
+  kind: ResultKind!
+  status: ResultStatus!
+  title: String!
+  label: String!
+  assayLabel: String!
+  specimenType: String!
+  pipeline: String!
+  runDate: String!
+  reason: String!
+  finding: String
+  consent: Consent!
+  physicalPlateId: ID!
+  physicalWellId: ID!
+  supersedes: Result
+  flowCell: String
+  trigger: ResultTrigger
+  metrics: [ResultMetric!]!
+  ctDna: CtDnaReadout
+  minWriteRole: WriteRole!
+  specimenId: ID
+  patientCode: String
+  seriesLabel: String
+  artifactsRestricted: Boolean
+  artifacts(first: Int = 20, after: String): ArtifactConnection!
+}
+enum WriteRole {
+  viewer
+  analyst
+  reviewer
+  lab_operator
+  arc_lead
+  auditor
+  admin
+}
+enum MetricComparator {
+  gte
+  lte
+}
+type ResultMetric {
+  key: String!
+  label: String!
+  value: Float!
+  unit: String!
+  target: Float
+  comparator: MetricComparator
+}
+type ResultTrigger {
+  source: String!
+  refId: String
+  detail: String!
+}
+type CtDnaReadout {
+  detected: Boolean!
+  meanVafPct: Float!
+  tracked: Int!
+  detectedCount: Int!
+  mtmPerMl: Float
+  emerging: String
+}
+enum RestoreState {
+  in_progress
+  restored
+}
+enum RestoreTier {
+  expedited
+  standard
+  bulk
+}
+type ArtifactRestore {
+  state: RestoreState!
+  tier: RestoreTier!
+  requestedAt: String!
+  readyAt: String
+  expiresAt: String
+}
+enum FileKind {
+  qc
+  vcf
+  calls
+  gvcf
+  bam
+  cram
+  fastq
+  idat
+}
+type File {
+  """
+  Stable object key: reused files keep the same identity across results.
+  """
+  id: ID!
+  kind: FileKind!
+  """
+  Integer byte count represented as Float because GraphQL Int is signed 32-bit.
+  """
+  sizeBytes: Float!
+  createdAt: String!
+  lifecycleRuleId: ID!
+}
+type ArtifactReference {
+  id: ID!
+  file: File!
+  reusedFrom: Result
+  legalHold: Boolean!
+  restore: ArtifactRestore
+}
+type WellEdge {
+  cursor: String!
+  node: Well!
+}
+type WellConnection {
+  edges: [WellEdge!]!
+  totalCount: Int!
+  pageInfo: PageInfo!
+}
+type ResultEdge {
+  cursor: String!
+  node: Result!
+}
+type ResultConnection {
+  edges: [ResultEdge!]!
+  totalCount: Int!
+  pageInfo: PageInfo!
+}
+type ArtifactEdge {
+  cursor: String!
+  node: ArtifactReference!
+}
+type ArtifactConnection {
+  edges: [ArtifactEdge!]!
+  totalCount: Int!
+  pageInfo: PageInfo!
+}

@@ -1,0 +1,86 @@
+/* Shared by the first HTML paint and React's deferred view boundary. */
+.plate-loading {
+  --load-ink: var(--sot-shell-text, #c8d8ee);
+  --load-ground: var(--sot-shell-background, #0a1120);
+  --load-plate: var(--sot-scene-plate, #0b1728);
+  --load-edge: var(--sot-scene-plate-edge, #2b4560);
+  --load-teal: var(--sot-status-success, #34d399);
+  --load-blue: var(--sot-status-info, #38bdf8);
+  --load-gold: var(--sot-status-warning, #fbbf24);
+  --load-violet: var(--sot-status-violet, #c4b5fd);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 220px;
+  height: 100%;
+  isolation: isolate;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 28px;
+  color: var(--load-ink);
+  background: var(--load-ground);
+  text-align: center;
+  font: 13px/1.5 'DM Sans', system-ui, sans-serif;
+}
+#initial-load { position: fixed; inset: 0; z-index: 100; }
+.plate-loading__graphic {
+  position: relative;
+  width: 218px;
+  height: 152px;
+  display: grid;
+  place-items: center;
+  perspective: 650px;
+}
+.plate-loading__plate {
+  display: grid;
+  grid-template-columns: repeat(4, 25px);
+  gap: 12px;
+  padding: 18px;
+  transform-style: preserve-3d;
+  transform: rotateX(59deg) rotateZ(-24deg);
+  border: 2px solid var(--load-edge);
+  border-radius: 13px;
+  background: var(--load-plate);
+  box-shadow: 0 6px 0 var(--load-edge), 0 18px 28px #0002;
+}
+.plate-loading__plate > i {
+  display: block;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: var(--load-blue);
+  border: 1px solid color-mix(in srgb, var(--load-ink) 35%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--load-blue) 45%, var(--load-plate));
+  animation: loading-sample-rise 1450ms cubic-bezier(.4, 0, .2, 1) infinite;
+}
+.plate-loading__plate > i:nth-child(3n + 1) { background: var(--load-teal); animation-delay: -420ms; }
+.plate-loading__plate > i:nth-child(4n + 2) { background: var(--load-violet); animation-delay: -840ms; }
+.plate-loading__plate > i:nth-child(5n) { background: var(--load-gold); animation-delay: -1160ms; }
+.plate-loading > p { position: relative; margin: 0; letter-spacing: .025em; }
+.plate-loading__tiles { position: absolute; inset: -12%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; pointer-events: none; transform: rotate(-7deg); }
+.plate-loading__tiles > i { opacity: 0; background: var(--load-blue); }
+.plate-loading__tiles > i:nth-child(3n) { background: var(--load-teal); }
+.plate-loading__tiles > i:nth-child(3n + 1) { background: var(--load-violet); }
+.plate-loading__tiles > i:nth-child(5n) { background: var(--load-gold); }
+.plate-loading[data-phase='ready'] { pointer-events: none; animation: loading-recede 900ms ease-in both; }
+.plate-loading[data-phase='ready'] .plate-loading__plate { animation: loading-plate-upright 520ms cubic-bezier(.18,.8,.2,1) both; }
+.plate-loading[data-phase='ready'] .plate-loading__plate > i { animation: none; }
+.plate-loading[data-phase='ready'] .plate-loading__tiles > i { animation: loading-tile-recede 550ms cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(140ms + var(--cell, 0) * 17ms); }
+.plate-loading[data-phase='ready'] > p { opacity: 0; }
+.plate-loading__failure { display: none; }
+.plate-loading[data-phase='failed'] .plate-loading__graphic,
+.plate-loading[data-phase='failed'] > p { display: none; }
+.plate-loading[data-phase='failed'] .plate-loading__failure { display: block; }
+.plate-loading__failure button { margin-top: 12px; padding: 10px 16px; border: 1px solid var(--load-edge); border-radius: 6px; color: var(--load-ink); background: var(--load-plate); cursor: pointer; }
+[hidden] .plate-loading * { animation-play-state: paused; }
+@keyframes loading-sample-rise { 0%, 100% { transform: translateZ(2px); } 45% { transform: translateZ(28px); } 70% { transform: translateZ(6px); } }
+@keyframes loading-plate-upright { from { transform: rotateX(59deg) rotateZ(-24deg); } to { transform: rotateX(0deg) rotateZ(0deg) scale(1.08); } }
+@keyframes loading-tile-recede { 0% { opacity: 0; transform: translateY(36px) scale(.72); } 35% { opacity: .2; } 100% { opacity: 0; transform: translateY(-80px) scale(1.05); } }
+@keyframes loading-recede { 0%, 35% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .plate-loading *, .plate-loading { animation: none !important; }
+  .plate-loading[data-phase='ready'] { display: none; }
+}

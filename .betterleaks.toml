@@ -1,0 +1,30 @@
+title = "Source of Truth publication boundary"
+betterleaksMinVersion = "1.10.1"
+
+# These values are non-issued inputs for isolated CI containers or mocked tests.
+# Keep path, rule and exact value together; the same text elsewhere still scans.
+# Database proof supplies disposable loopback credentials to its MySQL service.
+# Unit fixtures exercise environment decoding and rejection without connecting.
+# The clone bootstrap names psql variables; getenv supplies generated local values.
+filter = '''
+(
+  get(attributes, "path", "") == ".github/workflows/database-proof.yml" &&
+  finding["rule_id"] == "generic-password" &&
+  finding["secret"] in ["disposable-ci-root", "disposable-ci-only"]
+)
+||
+(
+  get(attributes, "path", "") in ["tests/database-proof.test.mjs", "tests/plate-records.test.mjs", "tests/postgres-connection.test.mjs"] &&
+  finding["rule_id"] == "generic-password" &&
+  finding["secret"] == "test-only"
+)
+||
+(
+  get(attributes, "path", "") == "scripts/clone/bootstrap.sql" &&
+  finding["rule_id"] == "generic-password" &&
+  finding["secret"] in ["owner_password", "runtime_password"]
+)
+'''
+
+[extend]
+useDefault = true

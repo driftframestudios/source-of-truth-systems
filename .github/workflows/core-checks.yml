@@ -1,0 +1,39 @@
+name: Core checks
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - README.md
+      - AGENTS.md
+      - docs/**/*.md
+      - .agents/**/*.md
+  workflow_dispatch:
+    inputs:
+      run_checks:
+        description: Run core checks (clear to skip without allocating a runner)
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: core-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.run_checks }}
+  cancel-in-progress: true
+jobs:
+  core:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.run_checks) ||
+      (github.event_name == 'pull_request' && !github.event.pull_request.draft && vars.CORE_CHECKS_AUTOMATIC != 'false')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/prepare
+      - run: pnpm typecheck
+      - run: pnpm check:3d
+      - run: pnpm build
+      - run: pnpm test
+      - name: Record the observation
+        run: |
+          printf '%s\n' 'TypeScript, CSS 3D structure, production build, unit/API and startup-budget checks passed.' 'The optional real-MySQL case remains with Database proof; browser behavior remains with Browser checks.' >> "$GITHUB_STEP_SUMMARY"

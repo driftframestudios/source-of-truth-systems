@@ -1,0 +1,13 @@
+query PlateOverview($id: ID!, $first: Int = 24, $after: String) {
+  plate(id: $id) {
+    id asOf rows columns
+    wells(first: $first, after: $after) {
+      totalCount
+      pageInfo { endCursor hasNextPage }
+      edges {
+        cursor
+        node { id plateId row column role sampleId assay consent contaminationProbability corridorCard { id label } }
+      }
+    }
+  }
+}
