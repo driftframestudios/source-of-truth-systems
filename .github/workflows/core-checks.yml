@@ -1,12 +1,5 @@
 name: Core checks
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths-ignore:
-      - README.md
-      - AGENTS.md
-      - docs/**/*.md
-      - .agents/**/*.md
   workflow_dispatch:
     inputs:
       run_checks:
@@ -20,9 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   core:
-    if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.run_checks) ||
-      (github.event_name == 'pull_request' && !github.event.pull_request.draft && vars.CORE_CHECKS_AUTOMATIC != 'false')
+    if: inputs.run_checks
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

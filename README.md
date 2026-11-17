@@ -56,6 +56,8 @@ npm run test:browser
 
 Build before the aggregate tests: API and startup checks inspect the generated outputs. The browser suite owns port 3200. Actual PostgreSQL proof is an explicitly selected [isolated database route](docs/postgresql.md#focused-evidence), separate from ordinary tests. [Tests](tests/README.md) explains narrower choices, prerequisites and result boundaries.
 
+Main pull requests receive the fitting **Verify change** route and committed-tree scan. Optional deeper checks and the disabled [branch protection profiles](.github/rulesets/README.md) retain their own scope and activation. The docs branch uses a pinned data-only verification route after the separately approved Pages transition.
+
 ## Deploy or adapt
 
 The complete application runs on Node. `npm run build` creates browser files and private server data; `npm start` serves both with GraphQL. The public edition supports PostgreSQL and bundled examples. Other Node hosts can use the build/start contract and earn their own receiving-host check. A static host serves browser assets but does not provide the application's API or durable workspace. [Deployment guide](docs/deployment.md)

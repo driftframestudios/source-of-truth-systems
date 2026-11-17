@@ -70,8 +70,8 @@ The flag admits the three stored-workspace browser journeys; the fresh productio
 
 The [automation contract](../../../../docs/development-automation.md) and YAML own the current policy:
 
-- Core is automatic for eligible ready PRs unless `CORE_CHECKS_AUTOMATIC=false`; known Markdown-only documentation changes are filtered. Required-check configuration must account for filtered workflows staying Pending.
-- Each dispatch defaults `run_checks=true`; `false` skips before runner/services. A skipped route supplies no behavior evidence.
+- Verify change receives every main PR with a docs/Core selection and committed-tree scan. The inactive main profile requires that unfiltered job; Core also remains an optional manual route.
+- Optional dispatches default `run_checks=true`; false skips before runner/services. Verify change always runs. A skipped optional route supplies no behavior evidence.
 - Browser defaults to `scene-smoke`: the core, responsive-exploration and guided-exploration files. It uses runner Chrome with a version receipt, falling back to locked Chromium. `all` uses locked Playwright Chromium.
 - `include_core=true` runs types, the CSS 3D guard and aggregate Node checks in the same Browser job. For complete ordinary interaction proof select `all` with this option.
 - Optional MySQL compatibility proof and publication scan are separate manual choices. PostgreSQL uses the explicit native/Compose routes, with a [manual clone workflow](../../../../.github/workflows/postgresql-proof.yml) for the same container proof. Selected runs share resources only within their job. The shared preparation action caches package bytes and does not reuse another job's VM, build or test result.

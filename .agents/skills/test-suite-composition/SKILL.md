@@ -68,7 +68,7 @@ Reuse an existing installation or build only while its relevant source, lockfile
 
 ### Rule: Expensive families have explicit entry and cleanup
 
-Use the [automation contract](../../../docs/development-automation.md) for current defaults. Each manual workflow's `run_checks=false` skips the whole job before allocation. Browser and compatibility-database runs are manual choices; PostgreSQL proof has its explicit local native/Compose routes. A database proof requires an independently provisioned disposable loopback database; the guarded runner owns destructive ordering and reseeding. A loopback address alone cannot establish that a tunnel leads to disposable data. Keep secrets and raw traces with their protected runtime owners.
+Use the [automation contract](../../../docs/development-automation.md) for current defaults. Optional workflows' `run_checks=false` skips the whole job before allocation; Verify change always executes its selected required route. Browser and compatibility-database runs are manual choices; PostgreSQL proof has its explicit local native/Compose routes. A database proof requires an independently provisioned disposable loopback database; the guarded runner owns destructive ordering and reseeding. A loopback address alone cannot establish that a tunnel leads to disposable data. Keep secrets and raw traces with their protected runtime owners.
 
 ### Rule: Optimize the measured phase
 
