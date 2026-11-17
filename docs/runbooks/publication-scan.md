@@ -65,7 +65,7 @@ The current exceptions cover disposable loopback CI credentials and two mocked u
 
 ## CI and public carriers
 
-[Publication scan](../../.github/workflows/publication-scan.yml) runs changed committed source on ready PRs with a read-only token and no retained credentials. Set `PUBLICATION_CHECKS_AUTOMATIC=false` to rest that trigger. Manual dispatch selects source, history or the complete built release closure. Clearing `run_checks` skips the entire job before runner allocation. Source scopes prepare only Node and the scanner; release scope reuses the locked build preparation. Results contain normalized output; this workflow uploads no raw reports, caches or application archives.
+[Publication scan](../../.github/workflows/publication-scan.yml) provides manual source, history and built-artifact selection. Verify change owns the complete committed-tree scan on every main PR. Clearing the optional scan's run_checks skips before allocation. Source scopes prepare Node and the scanner; release scope also builds the accepted source. Checks return normalized identity/results, while raw reports, caches and artifacts stay with their diagnostic owners.
 
 Before a public handoff, inspect embedded image/archive metadata separately: location, device identity, authorship, timestamps and packaged paths. Preserve intentional color/profile/attribution fields. Review visible content, rights and intended audience with the owner. The generated `llms` documentation is another publication carrier and receives the build-artifact scan. Its source selection remains with the documentation generator and publication manifest owner.
 

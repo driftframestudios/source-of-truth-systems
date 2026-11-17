@@ -97,7 +97,7 @@ const label = (text) =>
 
 // Rewrite ordinary inline/reference destinations while retaining authored code.
 // This is a bounded documentation projection, not a Markdown-to-HTML renderer.
-function rewriteLinks(markdown, destination) {
+export function rewriteLinks(markdown, destination) {
   function prose(text) {
     return text
       .replace(

@@ -1,0 +1,26 @@
+name: Verify documentation data
+description: Read the candidate tree with pinned trusted tools; publish nothing.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: ${{ github.action_path }}/../../../package.json
+        package-manager-cache: false
+    - name: Verify the candidate publication tree
+      shell: bash
+      env:
+        TOOLS_ROOT: ${{ github.action_path }}/../../..
+        CANDIDATE_ROOT: ${{ github.workspace }}
+        CANDIDATE_SHA: ${{ github.sha }}
+      run: |
+        mkdir -p "$TOOLS_ROOT/.cache"
+        node "$TOOLS_ROOT/scripts/ci/verify-docs.mjs" "$CANDIDATE_ROOT" "$CANDIDATE_SHA" "$TOOLS_ROOT/.cache/docs-candidate"
+    - name: Inspect publication data with the pinned detector and fresh canary
+      shell: bash
+      env:
+        TOOLS_ROOT: ${{ github.action_path }}/../../..
+      run: |
+        cd "$TOOLS_ROOT"
+        node scripts/security/install-betterleaks.mjs
+        node scripts/security/scan-secret-material.mjs artifact .cache/docs-candidate | tee -a "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,80 @@
+name: Verify change
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  workflow_dispatch:
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: verify-change-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    name: Verify change
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - id: prepare
+        uses: ./.github/actions/prepare
+      - name: Select the fitting observation
+        id: selection
+        env:
+          VERIFICATION_SELECTION: ${{ runner.temp }}/verify-change-selection.json
+          BASE_COMMIT: ${{ github.event.pull_request.base.sha || '' }}
+        run: node scripts/ci/verify-change.mjs select
+      - id: types
+        if: steps.selection.outputs.route == 'core'
+        run: pnpm typecheck
+      - id: geometry
+        if: steps.selection.outputs.route == 'core'
+        run: pnpm check:3d
+      - name: Build the selected source owners
+        id: build
+        env:
+          ROUTE: ${{ steps.selection.outputs.route }}
+        run: |
+          case "$ROUTE" in
+            core) pnpm build ;;
+            docs)
+              pnpm exec vite build --mode production --config vite.server.config.ts
+              pnpm build:docs
+              ;;
+            *) exit 2 ;;
+          esac
+      - name: Exercise the selected contracts
+        id: checks
+        env:
+          ROUTE: ${{ steps.selection.outputs.route }}
+        run: |
+          case "$ROUTE" in
+            core) pnpm test ;;
+            docs) node --test tests/documentation-bundle.test.mjs tests/documentation-site.test.mjs tests/verify-change.test.mjs ;;
+            *) exit 2 ;;
+          esac
+      - name: Inspect the complete proposed source
+        id: scan
+        run: |
+          pnpm test:security
+          pnpm security:install
+          pnpm test:security:engine
+          node scripts/security/scan-secret-material.mjs export HEAD | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Confirm tracked source remains the selected revision
+        id: identity
+        run: |
+          git diff --exit-code --quiet
+          git diff --cached --exit-code --quiet
+      - name: Receive required outcomes
+        if: always()
+        env:
+          VERIFICATION_SELECTION: ${{ runner.temp }}/verify-change-selection.json
+          VERIFICATION_OUTCOMES: >-
+            {"prepare":"${{ steps.prepare.outcome }}","selection":"${{ steps.selection.outcome }}","types":"${{ steps.types.outcome }}","geometry":"${{ steps.geometry.outcome }}","build":"${{ steps.build.outcome }}","checks":"${{ steps.checks.outcome }}","scan":"${{ steps.scan.outcome }}","identity":"${{ steps.identity.outcome }}"}
+        run: node scripts/ci/verify-change.mjs finish

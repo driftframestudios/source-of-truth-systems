@@ -36,14 +36,14 @@ For GitHub Actions, verify the selected branch/tag and use these controls:
 
 | Need | Deliberate selection | Result |
 | --- | --- | --- |
-| Ordinary code/configuration PR | Core runs automatically when ready and eligible; `CORE_CHECKS_AUTOMATIC=false` pauses auto runs. Manual Core remains available. | Types, CSS 3D guard, build and ordinary unit/API/startup evidence. Known Markdown-only paths are filtered. |
+| Main PR | Verify change always runs, including drafts, and selects docs or Core plus full committed-tree scanning. | Required selected observations at the proposed merge revision. Optional Core remains manually available. |
 | Quick Corridor/Plate/guide receiving check | Browser `suite=scene-smoke` | Named smoke files on runner Chrome, with version recorded; locked Chromium fallback if unavailable. |
 | Broad interaction/dependency proof | Browser `suite=all`, `include_core=true` | Complete ordinary browser population plus Core, sharing one installation/build in the job. |
 | PostgreSQL engine/transaction or clone proof | [Native engine populations](../postgresql.md#focused-evidence) or manual [PostgreSQL clone proof](../../.github/workflows/postgresql-proof.yml) | Explicit disposable ownership, initialization and recovery evidence. |
 | Retained MySQL compatibility | Optional MySQL compatibility proof | Isolated service and owned destructive sequence; shared databases remain untouched. |
 | Intentionally rest a manual route | `run_checks=false` | Whole job skipped before runner/services; no behavior or artifact result. |
 
-All dispatches default `run_checks=true`. Browser smoke and full-suite results retain their different populations. SQL proof stays separately selected. Path-filtered Core can remain Pending when required; maintainers own a compatible required-check policy. See [automation](../development-automation.md) for exact trigger and concurrency rules.
+Optional dispatches default `run_checks=true`; Verify change always runs. Browser smoke and full-suite results retain their different populations. SQL proof stays separately selected. The inactive main profile names the unfiltered Verify change job; docs protection has a separately pinned data-only check. See [automation](../development-automation.md) for exact trigger and concurrency rules.
 
 **Checkpoint:** Preparation matches the checked source and selected population. An existing package cache still receives frozen install verification. Separate jobs share setup code/cache, not a VM or accepted build/test result. Reuse within the Browser job retains one source and environment identity.
 

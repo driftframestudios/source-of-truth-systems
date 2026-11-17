@@ -1,0 +1,23 @@
+{
+  "name": "Retained release tag identity",
+  "target": "tag",
+  "enforcement": "disabled",
+  "bypass_actors": [],
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/tags/app-v*",
+        "refs/tags/docs-v*"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "update"
+    },
+    {
+      "type": "deletion"
+    }
+  ]
+}
