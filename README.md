@@ -39,7 +39,7 @@ Mobile puts the Corridor and Plate within reach of direct touch controls. Follow
 
 ## Run the complete local example
 
-Source access currently requires a repository invitation. The [live application](https://kindlight.ai) remains available to explore.
+Clone the repository below to run it locally. If GitHub requests access, ask the maintainer for an invitation. The [live application](https://kindlight.ai) remains available to explore.
 
 Install Git, Node **22.15 or newer within 22.x**, and Docker with Compose. The recipe supplies locked application dependencies and a PostgreSQL database owned by this clone.
 

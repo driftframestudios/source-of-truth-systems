@@ -7,6 +7,7 @@ Use the route that matches the receiving task. The [repository README](../../REA
 | [Focused change and independent review](focused-change.md) | One bounded change, fitting evidence and an independently reviewed handback | Working · v0.2.0 |
 | [Select meaningful checks and deliver their result](selective-check-delivery.md) | A discriminating test, proportionate suite and explicit executed/skipped result, with explicit artifact scope | Working · v0.1.0 |
 | [Publication scan](publication-scan.md) | A fresh-canary source/artifact observation, exact identity and private finding route | Working · v0.1.0 |
+| [Public-visibility handoff](public-visibility-handoff.md) | An owner-authorized visibility transition with contribution controls and signed-out receiving checks | Working · v0.1.0 |
 | [Tagged documentation release](tagged-documentation-release.md) | One reviewed static build, a verified artifact and explicit Pages activation | Exercised · v0.1.0 |
 | [Dependency maintenance](dependency-maintenance.md) | A justified dependency update with its receiving behavior and delivery checked | Working · v0.2.0 |
 
