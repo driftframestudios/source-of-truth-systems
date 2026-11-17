@@ -24,7 +24,7 @@
   "articles": [
     {
       "slug": "",
-      "source": "docs/site/missing-verification-article.md",
+      "source": "docs/site/index.md",
       "title": "Build with Source of Truth",
       "description": "Explore the architecture, run the synthetic example, and make a focused change.",
       "group": "Start"
