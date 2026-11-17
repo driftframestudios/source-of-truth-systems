@@ -5,7 +5,7 @@ import { Activity, Grid3X3, Info, Layers, X } from 'lucide-react';
 import { MobileCorridor } from './MobileCorridor';
 import { DeferredView } from '../DeferredView';
 import { ShowcaseCredit } from '../ShowcaseCredit';
-import { DeveloperDocsLink } from '../DeveloperDocsLink';
+import { DeveloperDocsLink, FoundationDocsInvitation } from '../DeveloperDocsLink';
 import { ThemeSelector } from '../../theme/ThemeSelector';
 import { GuideButton, GuideSlot } from '../guide/GuideProvider';
 import './mobile-showcase.css';
@@ -37,6 +37,7 @@ export function MobileShowcase() {
               </Dialog.Description>
               <p>A design showcase by Vikrant Varun Kudesia. Example data; the full workspace is available on a larger screen.</p>
               <DeveloperDocsLink />
+              <FoundationDocsInvitation />
               <ShowcaseCredit />
               <Dialog.Close className="mobile-showcase-close" aria-label="Close about this showcase"><X size={20} /></Dialog.Close>
             </Dialog.Content>

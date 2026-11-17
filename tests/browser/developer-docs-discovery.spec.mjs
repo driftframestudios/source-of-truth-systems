@@ -19,6 +19,20 @@ async function openDocs(page, link) {
   }
 }
 
+async function expectFoundationInvitation(container) {
+  const invitation = container.getByRole("link", {
+    name: "kindlight.foundation",
+    exact: true,
+  });
+  await expect(invitation).toBeVisible();
+  await expect(invitation).toHaveAttribute("href", "https://kindlight.foundation/");
+  await expect(invitation).toHaveAttribute("target", "_blank");
+  await expect(invitation).toHaveAttribute("rel", "noopener noreferrer");
+  const link = await invitation.boundingBox();
+  const credit = await container.locator("footer").boundingBox();
+  expect(link.y + link.height).toBeLessThanOrEqual(credit.y);
+}
+
 test("developer documentation opens beside an unsaved Source draft", async ({
   page,
 }) => {
@@ -53,6 +67,7 @@ test("mobile information and Guide offer docs while retaining the Plate scene", 
   await plate.click();
   await page.getByRole("button", { name: "About this showcase" }).click();
   const about = page.getByRole("dialog");
+  await expectFoundationInvitation(about);
   await openDocs(page, about.getByRole("link", { name: /Developer docs/ }));
   await expect(about).toBeVisible();
   await about
@@ -61,6 +76,7 @@ test("mobile information and Guide offer docs while retaining the Plate scene", 
   await expect(plate).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Guide", exact: true }).click();
   const guide = page.getByRole("complementary", { name: "Follow a sample." });
+  await expectFoundationInvitation(guide);
   await openDocs(page, guide.getByRole("link", { name: /Developer docs/ }));
   await expect(guide).toBeVisible();
   const link = await guide

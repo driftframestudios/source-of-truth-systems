@@ -22,3 +22,20 @@ export function DeveloperDocsLink({
     </a>
   );
 }
+
+export function FoundationDocsInvitation() {
+  return (
+    <div className="text-[11px] leading-relaxed text-[var(--sot-shell-muted)]">
+      Explore the developer documentation at{" "}
+      <a
+        href="https://kindlight.foundation/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline underline-offset-2"
+      >
+        kindlight.foundation
+      </a>
+      .
+    </div>
+  );
+}

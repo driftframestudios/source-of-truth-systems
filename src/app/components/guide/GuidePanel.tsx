@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Pause, Play, X } from "lucide-react";
 import { ShowcaseCredit } from "../ShowcaseCredit";
-import { DeveloperDocsLink } from "../DeveloperDocsLink";
+import { DeveloperDocsLink, FoundationDocsInvitation } from "../DeveloperDocsLink";
 import { useGuide } from "./GuideProvider";
 import { GUIDE_STEPS } from "./guideState";
 
@@ -78,6 +78,7 @@ export default function GuidePanel() {
           point. Open Guide to return.
         </p>
         <DeveloperDocsLink />
+        <FoundationDocsInvitation />
         <ShowcaseCredit />
       </aside>
     );
