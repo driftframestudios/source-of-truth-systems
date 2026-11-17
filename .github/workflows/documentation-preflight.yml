@@ -1,0 +1,72 @@
+name: Documentation preflight
+on:
+  workflow_dispatch:
+    inputs:
+      app_revision:
+        description: Accepted main commit (full SHA)
+        required: true
+        type: string
+      publication_revision:
+        description: Accepted docs commit (full SHA)
+        required: true
+        type: string
+      release_tag:
+        description: Immutable docs-vMAJOR.MINOR.PATCH tag selecting that docs commit
+        required: true
+        type: string
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      APP_REVISION: ${{ inputs.app_revision }}
+      PUBLICATION_REVISION: ${{ inputs.publication_revision }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      RELEASE_STATE: .release/tools/.cache/preflight
+      RELEASE_ARTIFACT: .release/tools/.cache/release
+    steps:
+      - name: Require the protected workflow receiver
+        run: test "$GITHUB_REF" = refs/heads/main
+      - name: Receive accepted application source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.app_revision }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Receive this trusted workflow's tools
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: .release/tools
+          persist-credentials: false
+      - name: Validate accepted revisions, immutable tag and publication data
+        run: node .release/tools/scripts/documentation/release.mjs prepare
+      - uses: ./.release/tools/.github/actions/prepare
+      - name: Exercise release boundaries
+        run: node --test .release/tools/tests/documentation-release.test.mjs
+      - name: Build the selected foundation source once
+        run: pnpm build:foundation
+      - name: Seal and inspect generated routes and file population
+        run: node .release/tools/scripts/documentation/release.mjs seal
+      - name: Scan the complete release artifact with a fresh canary
+        working-directory: .release/tools
+        run: |
+          node scripts/security/install-betterleaks.mjs
+          node scripts/security/scan-secret-material.mjs artifact .cache/release | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Confirm source identity after build
+        run: |
+          git diff --exit-code --quiet HEAD
+          git diff --cached --exit-code --quiet
+      - name: Retain the reviewed files and their receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: documentation-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release/tools/.cache/release/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

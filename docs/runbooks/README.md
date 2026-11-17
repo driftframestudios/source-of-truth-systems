@@ -7,6 +7,7 @@ Use the route that matches the receiving task. The [repository README](../../REA
 | [Focused change and independent review](focused-change.md) | One bounded change, fitting evidence and an independently reviewed handback | Working · v0.2.0 |
 | [Select meaningful checks and deliver their result](selective-check-delivery.md) | A discriminating test, proportionate suite and explicit executed/skipped result, with explicit artifact scope | Working · v0.1.0 |
 | [Publication scan](publication-scan.md) | A fresh-canary source/artifact observation, exact identity and private finding route | Working · v0.1.0 |
+| [Tagged documentation release](tagged-documentation-release.md) | One reviewed static build, a verified artifact and explicit Pages activation | Working · v0.1.0 |
 | [Dependency maintenance](dependency-maintenance.md) | A justified dependency update with its receiving behavior and delivery checked | Working · v0.2.0 |
 
 The working runbooks consolidate recurring repository practice; each awaits an end-to-end exercise as written. Independent reading exercises can expose useful corrections while leaving that full-route standing open. Record decision-changing findings in the existing PR or Issue, then update standing when the route has been exercised. Git retains prior versions; the current index supplies discovery.

@@ -1,0 +1,93 @@
+name: Activate documentation
+on:
+  workflow_dispatch:
+    inputs:
+      preflight_run:
+        description: Successful main preflight run ID
+        required: true
+        type: string
+      manifest_digest:
+        description: Reviewed file-manifest SHA-256 from that preflight
+        required: true
+        type: string
+      release_tag:
+        description: Reviewed immutable docs-vMAJOR.MINOR.PATCH tag
+        required: true
+        type: string
+      activate_deployment:
+        description: Publish these verified files to kindlight.foundation
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: documentation-pages-${{ inputs.activate_deployment && 'activate' || github.run_id }}
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  verify:
+    if: inputs.activate_deployment
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    env:
+      PREFLIGHT_RUN: ${{ inputs.preflight_run }}
+      MANIFEST_DIGEST: ${{ inputs.manifest_digest }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      RELEASE_SELECTION: .cache/preflight-selection.json
+      RELEASE_ARTIFACT: .cache/release
+    steps:
+      - name: Require the protected workflow receiver
+        run: test "$GITHUB_REF" = refs/heads/main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          package-manager-cache: false
+      - name: Resolve the successful trusted preflight and exact artifact
+        id: selected
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .cache
+          node scripts/documentation/release.mjs resolve
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.0
+        with:
+          artifact-ids: ${{ steps.selected.outputs.artifact_id }}
+          run-id: ${{ inputs.preflight_run }}
+          github-token: ${{ github.token }}
+          path: .cache/release
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Verify the reviewed manifest, accepted revisions and tag
+        run: node scripts/documentation/release.mjs verify
+      - name: Scan the exact receiving artifact
+        run: |
+          node scripts/security/install-betterleaks.mjs
+          node scripts/security/scan-secret-material.mjs artifact .cache/release | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Transfer the same verified static files to this Pages run
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: .cache/release/site
+          include-hidden-files: true
+  deploy:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Activate the verified current-run Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

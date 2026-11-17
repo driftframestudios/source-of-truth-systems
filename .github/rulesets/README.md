@@ -1,6 +1,6 @@
 # Receive reviewed changes
 
-[`main.json`](main.json) and [`docs.json`](docs.json) are disabled branch protection profiles. The two [tag creation](tag-creation.json) and [tag retention](tag-immutability.json) profiles are also disabled. Versioning these files changes no GitHub setting. The owner activates each profile after its actual receiving behavior and account capabilities have been verified.
+The receiving repository has activated the reviewed main/docs and release-tag rules and uses Actions-based Pages. [`main.json`](main.json), [`docs.json`](docs.json), [tag creation](tag-creation.json) and [tag retention](tag-immutability.json) retain `disabled` enforcement as reusable import templates. Versioning or copying those files changes no GitHub setting; a new receiver activates them after observing its own checks and account capabilities.
 
 Both profiles require a pull request, resolved conversations and current-merge checks; they block branch deletion and force updates. They have no standing bypass and require zero GitHub approving reviews for the solo owner. Independent technical review remains recorded in the PR. [CODEOWNERS](../CODEOWNERS) routes review to the owner without imposing a second-person approval that the repository cannot supply.
 
@@ -24,7 +24,7 @@ node scripts/ci/create-docs-wrapper.mjs ACCEPTED_MAIN_SHA NEW_WORKFLOW_FILE
 
 The generator verifies the action exists at that local commit and creates a new file. Place the result at `.github/workflows/verify-docs.yml` in the proposed docs change. Its stable job name is `Verify documentation`; verify the actual GitHub Actions context before enabling `docs.json`. Updating the pin is an explicit tooling upgrade with its own review.
 
-## Activate in the receiving environment
+## Activate in another receiving environment
 
 1. Keep the existing branch coordinates, Pages settings, CNAME, bootstrap LICENSE and served-site recovery information with the owner's private recovery record.
 2. Receive the reviewed `main` source and observe its checks. Installing these files changes no existing Pages publication setting.
@@ -38,6 +38,6 @@ Both tag profiles match `app-v*` and `docs-v*`. The creation profile admits only
 
 The separate retention profile blocks updates and deletions with **no bypass actors**, including for administrators. Keeping creation and retention separate allows the authorized owner to create a release identity while preserving that tag afterward. A later release receives a new tag. Before activation, confirm the account supports these rules and exercise allowed creation plus refused mutation/deletion in an owned disposable test repository. Check both effective profiles together; importing JSON alone establishes no enforcement result.
 
-The later documentation publication workflow owns the separately approved static artifact, deployment environment and activation. Creating an application or documentation tag through these profiles publishes nothing by itself. Repository visibility remains a separate human decision. Normal branch repair uses a revert or follow-up PR; an exceptional temporary protection change is recorded and the accepted profile restored afterward.
+The [tagged documentation release](../../docs/runbooks/tagged-documentation-release.md) owns the reviewed static artifact, deployment environment and explicit activation. Creating an application or documentation tag through these profiles publishes nothing by itself. Repository visibility remains a separate human decision. Normal branch repair uses a revert or follow-up PR; an exceptional temporary protection change is recorded and the accepted profile restored afterward.
 
 [Automation routes](../../docs/development-automation.md) · [GitHub rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets) · [GitHub's administrator-role example](https://github.com/github/awesome-copilot/blob/main/skills/repo-standardizer/SKILL.md) · [Pages publishing sources](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)

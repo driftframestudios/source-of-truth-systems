@@ -4,6 +4,8 @@ Follow a sample from intake to a result, then follow the code that makes that ex
 
 ## Start with something you can run
 
+The [live application](https://kindlight.ai) is available to explore. Source access currently requires a repository invitation; invited collaborators can use the local setup below.
+
 [Run the example](../getting-started.md), select a well in Plate, and compare its results. The bundled scenario works without a database or an account. The Node server adds the real GraphQL boundaries used by the production application.
 
 ## Find the owner of a change

@@ -4,6 +4,8 @@ Each clone can run its own PostgreSQL-backed synthetic example. Plate history an
 
 ## Start the complete local application
 
+Source access currently requires a repository invitation. You can explore the [live application](https://kindlight.ai) immediately; the steps below apply once you have the clone.
+
 Install Git, Node **22.15 or newer within 22.x**, and Docker with Compose. From the clone's root:
 
 ```sh

@@ -33,3 +33,6 @@ dist-foundation/
 
 # Per-clone database backups and local state
 .clone/
+
+# Isolated, exact-revision documentation release preparation.
+.release/
