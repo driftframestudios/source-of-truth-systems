@@ -16,4 +16,12 @@ The current `main` source is the maintenance target. Older snapshots and persona
 
 The [input assessment](docs/research/input-boundaries.md), [GraphQL contract](docs/graphql-read-api.md), [permission scenarios](docs/permission-scenarios.md) and [workspace contract](docs/visitor-workspaces.md) describe the implemented boundaries and their limits. Registered GraphQL operations and scenario permissions are useful controls, but neither establishes a person's identity. Keep database settings in the hosting secret store or an ignored local environment file. Ordinary application startup preserves stored data; schema setup is an explicit operator action.
 
+## Current dependency exposure
+
+The 2026-11-17 assessment retains an open high-severity dependency finding: [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) affects `picomatch` through `4.0.7` and lists no patched version. The [lockfile](pnpm-lock.yaml) includes `picomatch@4.0.7` in the Vite `6.4.6` build graph, including `tinyglobby` and `fdir`. This assessment describes the current exposure; it does not claim a dependency fix.
+
+Glob patterns are developer-controlled source: [asset matching](vite.config.ts), [story discovery and watcher exclusions](vite.figma.config.ts), and [Tailwind source scanning](src/styles/tailwind.css). Application forms, URLs and GraphQL inputs supply none of these patterns. Contributors can propose configuration changes through review. The ordinary production command starts the [Node server](scripts/serve.mjs), which serves built assets and GraphQL without running Vite; the installed dependency graph still contains the affected package.
+
+The maintainer tracks reassessment in [Issue #13](https://github.com/driftframestudios/source-of-truth-systems/issues/13). Review a compatible patched release when one becomes available, and reassess earlier when dependency consumers, glob configuration, externally supplied pattern inputs or development-server exposure change. Keep development tooling within its intended development environment and use the production server for hosted application delivery.
+
 [Return to the repository](README.md) · [General support](SUPPORT.md)

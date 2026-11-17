@@ -18,6 +18,8 @@ Vikrant Varun Kudesia maintains this project for Driftframe Studios, LLC. Public
 
 Independent technical review receives the proposed revision before merge. This solo-maintainer project can record an independent reviewer or coding-agent review in the PR; it does not require a second account's approving-review badge. The maintainer owns acceptance and repository settings. A passing check supports the behavior it exercised; it does not authorize publication or database setup.
 
+Public fork contributions use GitHub's least restrictive workflow-approval policy: only first-time contributors who are also new to GitHub may need a platform-required approval. The repository adds no blanket external-contributor approval requirement. The maintainer reviews workflow, action, installation and build changes before merge, and before approving a run when GitHub requests it. The [public-visibility handoff](docs/runbooks/public-visibility-handoff.md) records how the owner applies and confirms that policy when opening repository access.
+
 ## Tests, tools and rights
 
 The [selective check runbook](docs/runbooks/selective-check-delivery.md) explains focused checks, optional browser/SQL proof and release evidence. Copied workflows remain subject to each repository's Actions settings; [automation](docs/development-automation.md) describes the current selection controls. Keep optional expensive checks deliberate.

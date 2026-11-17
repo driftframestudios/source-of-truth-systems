@@ -8,9 +8,11 @@ The Figma Make starting material included [shadcn/ui](https://ui.shadcn.com/) co
 
 Other packages retain their own licenses in their distributed packages. [package.json](package.json) and [pnpm-lock.yaml](pnpm-lock.yaml) identify the actual dependency graph; this attribution file does not relicense those dependencies.
 
-## Image
+## Images
 
 [source-of-truth-systems-social-preview.png](public/source-of-truth-systems-social-preview.png) is the maintainer-supplied screenshot of the application's Plate, used for social previews and repository orientation. The current tracked image and imports contain no Unsplash photograph. This supersedes the starter's generic Unsplash credit; restore a specific photographer/image attribution if such a photo is deliberately added later.
+
+The five [README screenshots](docs/images/readme/) were captured locally from the working application using its bundled synthetic examples. They show the desktop Corridor, Sample history and Cohort Builder, plus the mobile Corridor and Sample history. They retain the project's copyright and contain no added stock photography.
 
 ## Fonts
 
