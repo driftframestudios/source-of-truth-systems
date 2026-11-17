@@ -30,7 +30,7 @@ This supersedes the thread-first, sequential record reveal. Existing examples su
 - `plate/PlateHistorySource.tsx` and `plate-history.css` project source, recovery and local activity from props, without fetching or inventing progress.
 - `PlateScene3D`, `ResultTray` and `MobilePlate` place that projection beside the current primary record. Rendering and decorative motion retain separate lifetimes from requests.
 
-Future Welcome can reuse this visual language while its content and routing remain under review in #53. A loading animation does not choose a landing route or begin a tour.
+[Guided exploration](research/guided-exploration.md) now presents its optional invitation after application loading and offers header replay. The guide owns its scene sequence and cancellation; loading graphics only communicate waiting and readiness.
 
 ## Evidence
 

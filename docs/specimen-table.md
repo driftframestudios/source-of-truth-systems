@@ -2,7 +2,7 @@
 
 Specimens starts with its visual masonry atlas: accession and patient, indication and material, consent, coverage, recorded timeline and current workflow. A Cards / Table switch gives the same collection a compact comparison view. Search, filters and sorting belong to that collection, so switching representations retains the visitor's scope. Accepted records stay with the shared session owner.
 
-**Supersession:** #83 replaces #49's inline expanding-row interpretation. Selecting a table cell now opens that cell's information group in a modal. The row remains compact. The earlier decision remains in Git history; it is no longer the interaction contract.
+**Supersession:** topic-specific cell dialogs replace the earlier inline expanding-row interpretation. Selecting a table cell now opens that cell's information group in a modal. The row remains compact. This description preserves the supersession; topic-specific dialogs define the current interaction contract.
 
 ## Reading and interaction contract
 
@@ -24,7 +24,7 @@ The table uses the same navy, teal selection and sky/violet/amber status languag
 
 The dialog is a compact raised record surface. It keeps identity and topic navigation above the scrolling body and collection navigation below. Zero-valued tumor/variant metrics remain values; unavailable plate assignment reads “Not assigned.” Recorded stage and dated timeline remain source facts, while sample, review and order reflect accepted local changes.
 
-Every specimen metric declares its target direction as `gte` (at least) or `lte` (at most). Cards and expanded quality show that qualifier beside the unchanged raw value, target and unit. The duplication-rate example meets its at-most target; depth, coverage and the remaining supplied examples declare at-least targets. These are synthetic source contracts, independent of metric names or clinical threshold inference. A shared comparison owner supplies both metric color and Cohort Builder's **All metric targets met** predicate and result strip. An empty metric collection remains unassessed rather than satisfying the predicate. QC flags remain separate recorded findings, so meeting one target never clears a flag. This supersedes the inherited all-at-least rendering recorded before #48.
+Every specimen metric declares its target direction as `gte` (at least) or `lte` (at most). Cards and expanded quality show that qualifier beside the unchanged raw value, target and unit. The duplication-rate example meets its at-most target; depth, coverage and the remaining supplied examples declare at-least targets. These are synthetic source contracts, independent of metric names or clinical threshold inference. A shared comparison owner supplies both metric color and Cohort Builder's **All metric targets met** predicate and result strip. An empty metric collection remains unassessed rather than satisfying the predicate. QC flags remain separate recorded findings, so meeting one target never clears a flag. This supersedes the inherited rendering that treated every metric target as at-least.
 
 ## Table engine decision
 

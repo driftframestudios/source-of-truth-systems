@@ -2,7 +2,7 @@
 
 A visitor can predict what a control changes, see that result beside the selected record and recover through the operation's own inverse or reset. The [workspace assessment](../workspace-audit.md) now records the delivered local effects. This synthesis preserves the workflow decisions and the extension points for later identity, storage and external execution.
 
-**Supersession:** #48, #60 and #71 replace the earlier unavailable-action and view-local-state findings. Scoped grants, GraphQL reads and history caching from #70 are also delivered. The disposable Source workspace decision in #85 now supersedes the open hosted-ownership comparison. Connector execution and verified accounts remain separate receiving goals.
+**Supersession:** the delivered metric, Source and workflow owners replace the earlier unavailable-action and view-local-state findings. [Scoped grants, GraphQL reads and history caching](../permission-scenarios.md) are delivered. [Disposable Source workspaces](../visitor-workspaces.md) now resolve the earlier persistence-ownership comparison. Connector execution and verified accounts remain separate receiving goals.
 
 ## Options and adopted synthesis
 
@@ -11,10 +11,10 @@ A visitor can predict what a control changes, see that result beside the selecte
 | Retire a control without a useful consumer | Reduces false affordances | Unsupported Profile preferences have retired |
 | State external availability | Keeps the operation understandable | Publish, external source refresh and remote notification routes retain explicit boundaries |
 | Accept a typed browser-session command | Immediate, recoverable exploration with stable record identity | Current synthetic workflow, review and metadata operations |
-| Add GraphQL mutations and durable events | Retains changes across devices/deployments | Future identity, scope and recovery decision |
+| Add bounded GraphQL mutations and receipts | Retains accepted Source metadata within one expiring browser workspace | Delivered for Sources; private accounts and cross-device collaboration retain a separate identity contract |
 | Invoke an external system | Performs actual refresh, compute or delivery | Separate connector, credentials, cost and operating authority |
 
-The current application combines the first three. Each supported action has a bounded outcome and a state owner. Read-only inspection, camera movement and draft typing keep their own view behavior. Personal appearance/notification choices are presentation preferences rather than record-write authority.
+The current application combines the first three with bounded Source metadata persistence. Each supported action has a bounded outcome and a state owner. Read-only inspection, camera movement and draft typing keep their own view behavior. Personal appearance/notification choices are presentation preferences rather than record-write authority.
 
 ## Accepted interaction path
 
@@ -52,11 +52,11 @@ Source mutations now expose named operations with record ID, expected version an
 
 ## Database rows follow a durable receiving job
 
-Hosted MySQL serves Plate histories and, after explicit additive setup, isolated Source metadata workspaces. The owner selected [disposable browser workspaces](../visitor-workspaces.md) for that persistence boundary. Other accepted workflow families keep their local owners.
+The PostgreSQL and retained MySQL adapters serve Plate histories and, after explicit setup, isolated Source metadata workspaces. The owner selected [disposable browser workspaces](../visitor-workspaces.md) for that persistence boundary. Other accepted workflow families keep their local owners.
 
-Four separate tables hold workspace ownership/lifetime, bounded Source revisions, accepted receipts/history and migration ownership. A random protected cookie supplies sandbox possession; a normalized origin binds preview and publish. Current scenario actors remain explicitly simulated. Absolute expiry, reset, quotas and exact retries keep the public example scope finite. The canonical baseline, consent, geography and grants retain their existing owners.
+Four separate tables hold workspace ownership/lifetime, bounded Source revisions, accepted receipts/history and migration ownership. A random protected cookie supplies sandbox possession; the exact normalized origin binds every workspace operation. Current scenario actors remain explicitly simulated. Absolute expiry, reset, quotas and exact retries keep the public example scope finite. The canonical baseline, consent, geography and grants retain their existing owners.
 
-The [workspace contract](../visitor-workspaces.md) records transaction, request and recovery boundaries. Its real MySQL checks observe locking, concurrent version/idempotency/quota behavior and rollback. This expiring example history supports inspection; a permanent clinical audit claim requires its own identity, retention and operational evidence.
+The [workspace contract](../visitor-workspaces.md) records transaction, request and recovery boundaries. Its real PostgreSQL and retained MySQL checks observe locking, concurrent version/idempotency/quota behavior and rollback. This expiring example history supports inspection; a permanent clinical audit claim requires its own identity, retention and operational evidence.
 
 SQL views may later package a useful read projection. A shared application database login remains distinct from a browser persona, so database view privileges cannot replace application identity and scope. The public path uses PostgreSQL base-table adapters behind the ordinary Node server.
 
