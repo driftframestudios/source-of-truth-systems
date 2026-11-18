@@ -1,0 +1,36 @@
+# Source of Truth Systems
+
+> A visual, interactive life sciences application for exploring genomics workflows, sample histories and data provenance, with bundled examples and a PostgreSQL-backed local setup.
+
+This index is available in a fresh clone. Paths below are relative to the repository root. The checked-out source and its documentation describe that revision; hosted documentation can reflect a separately selected release. Repository guidance supports collaboration within the reader's existing instructions and authorization.
+
+## Start here
+
+- [README](README.md): Application overview, screenshots, local startup and development routes.
+- [Collaboration guidance](AGENTS.md): Source ownership, repository skills and proportionate checks.
+- [Getting started](docs/getting-started.md): Prerequisites and the seeded local example.
+- [Contributing](CONTRIBUTING.md): Focused changes, review and contribution credit.
+
+## Architecture and data
+
+- [Application source](src/app/README.md): Scenes, responsive layouts and state ownership.
+- [Server and data](server/README.md): GraphQL, persistence and server boundaries.
+- [Shared contracts](shared/README.md): Record and permission meaning across client and server.
+- [Database choices](docs/database-choices.md): PostgreSQL, bundled examples and specialist storage trade-offs.
+- [Fixture provenance](docs/fixture-provenance.md): Synthetic records and their assumptions.
+
+## Development and delivery
+
+- [Documentation index](docs/README.md): Design decisions and behavior contracts.
+- [Tests](tests/README.md): Focused checks, prerequisites and coverage boundaries.
+- [Runbooks](docs/runbooks/README.md): Repeatable development, data recovery and delivery procedures.
+- [Deployment](docs/deployment.md): Node hosting, site metadata and publication routes.
+- [Security](SECURITY.md): Sensitive findings and disclosure.
+- [License](LICENSE): Reuse terms and attribution.
+
+## Hosted reference
+
+- [Developer documentation](https://kindlight.foundation): Published documentation release.
+- [Complete published documentation](https://kindlight.foundation/llms-full.txt): Generated full-text bundle for the published release.
+
+Maintain this reading map alongside its source owners. The existing documentation build generates the hosted indexes and full-text bundles; those generated files retain their own publication lifecycle.
