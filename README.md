@@ -39,7 +39,7 @@ Mobile puts the Corridor and Plate within reach of direct touch controls. Follow
 
 ## Run the complete local example
 
-Clone the repository below to run it locally. If GitHub requests access, ask the maintainer for an invitation. The [live application](https://kindlight.ai) remains available to explore.
+Clone this public repository to run it locally, or explore the [live application](https://kindlight.ai).
 
 Install Git, Node **22.15 or newer within 22.x**, and Docker with Compose. The recipe supplies locked application dependencies and a PostgreSQL database owned by this clone.
 
@@ -75,6 +75,12 @@ For interface-only exploration or hot reload, install pnpm **10.34.3**, run `pnp
 The repository skills give an AI collaborator practical guidance for recurring work, such as checking code and release files for exposed API keys, preserving unfinished edits and choosing tests that exercise the behavior being changed. They keep useful development practices close to the code so a new collaboration can start with context.
 
 Companion runbooks turn those practices into repeatable steps for making changes, checking dependencies, recovering data and delivering a release. Use the [skills index](AGENTS.md#continue-a-collaboration) to choose a method and the [runbook index](docs/runbooks/README.md) to follow an established procedure. Both travel with your clone and can evolve with your project.
+
+## AI-readable documentation and indexing
+
+The prepopulated [llms.txt](llms.txt) gives AI collaborators a concise route into the source documentation as soon as they open the repository. Its relative links work within the clone; the application and documentation builds also generate hosted `llms.txt` and `llms-full.txt` files from the maintained documentation sources.
+
+Before deploying, create or adapt your site's `robots.txt` to reflect your own indexing preferences. This application's build generates its default from `robots.index` in [.figma/make/site.json](.figma/make/site.json); the standalone documentation build generates its own allow-all policy. Review the emitted file for each site you publish. The [deployment guide](docs/deployment.md) identifies the build and hosting routes.
 
 ## Verify a change
 
