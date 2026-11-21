@@ -24,8 +24,42 @@ coordinates and server-side credentials. Stable legacy identifiers connect
 records and accepted edits; their wording carries compatibility meaning rather
 than a dependency on an earlier workspace.
 
-To extend the examples, edit the owning source collection and check its related
-record, policy and rendering behavior. Keep real patient records and credentials
+## Extend an example
+
+Edit the owning source collection, then run `npm run typecheck`,
+`node --test tests/fixture-catalog.test.mjs` and `npm run build`. The private-data
+Vite build invokes [the fixture contract](../scripts/fixtures/catalog-contract.ts)
+before publishing its module. The contract is build-only; visitor transport and
+stored records retain their runtime admission boundaries. A failure identifies
+the collection and field to repair. Plate's existing parser retains its own
+bounded record diagnostics.
+
+| Relationship | Accepted targets and absence |
+| --- | --- |
+| Requirement source, decision sources, landmark source; generation packet active records | Existing Sources or Instructions in the named collection. Lists may be empty. |
+| Artifact parents, relationship endpoints | Sources or Artifacts. Source identity takes precedence when collections share an ID, matching artifact review. Artifact-only lineage is acyclic; a parent is distinct from its child. |
+| Comparison items | Sources, Artifacts or Instructions. |
+| Map edge endpoints | Map nodes; reciprocal graph links remain valid. |
+| Corridor cards, flags, labels and connections | Lanes; a connection may have a null lane. Card artifact/stream references and typed cross-reference lists are optional and resolve in their named collection when supplied. |
+| Corridor arrows; stream producer/consumer | Cards for both arrow endpoints; Lanes for streams, with a nullable consumer. Reciprocal workflow arrows remain valid. |
+| QC gates; biomarkers | QC metrics; Specimens. |
+| Wells, specimen anchors and result ownership | Optional card, well-coordinate and specimen references resolve when supplied. |
+| Result files and history | Lifecycle rules exist. [Plate admission](../shared/plate-records.mjs) checks well/result identity, ordered supersession, earlier reused files and consistent physical-file metadata. |
+
+IDs are unique within each owned collection. Physical-file keys intentionally
+repeat across results. Result physical plate IDs, sample codes, change-control
+references, descriptive text and generation-packet deferred topics retain their
+own meanings; the fixture contract treats these as context rather than local
+foreign keys. Scientific validity and clinical interpretation receive separate
+review.
+
+Collection indexes and iterative lineage frames use O(V) auxiliary space; each
+entity and reference is visited a bounded number of times, giving O(V+E) work.
+Plate admission also copies bounded records (96 wells, 512 results and at most
+eight artifacts per result). Existing fixture values and runtime behavior remain
+authoritative; focused tests also verify the contract leaves the input unchanged.
+
+Check the changed example's related record, policy and rendering behavior. Keep real patient records and credentials
 in an appropriately governed system; this repository's fixtures support
 interaction and implementation exploration.
 
