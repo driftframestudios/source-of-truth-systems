@@ -128,3 +128,6 @@
 :root:is([data-appearance='light'], [data-appearance='contrast']) .cohort-result-marker { color: var(--sot-status-warning); }
 :root:is([data-appearance='light'], [data-appearance='contrast']) .cohort-result-flag { color: var(--sot-status-danger); }
 :root[data-appearance='light'] .cohort-builder__tools button[aria-pressed='true'] { background: var(--sot-shell-surface); }
+:root:is([data-appearance='light'], [data-appearance='contrast']) .cohort-group[data-over='true'] {
+  background: color-mix(in srgb, var(--sot-shell-surface) 95%, var(--cohort-sky));
+}
