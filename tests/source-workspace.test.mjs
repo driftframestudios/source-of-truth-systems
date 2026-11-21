@@ -19,10 +19,14 @@ async function moduleUrl(path, imports = {}) {
 }
 const command = await moduleUrl("../src/app/services/command.ts");
 const source = await moduleUrl("../src/app/services/sourceSession.ts", {
+    "../../../shared/workspace-contract.mjs": new URL("../shared/workspace-contract.mjs", import.meta.url).href,
   "./command": command,
 });
 const browser = await moduleUrl("../src/app/services/browserSession.ts");
-const transport = await moduleUrl("../src/app/services/workspaceTransport.ts");
+const responseDecoder = await moduleUrl("../src/app/services/workspaceResponse.ts", {
+  "../../../shared/workspace-contract.mjs": new URL("../shared/workspace-contract.mjs", import.meta.url).href,
+});
+const transport = await moduleUrl("../src/app/services/workspaceTransport.ts", { "./workspaceResponse": responseDecoder });
 const { WORKSPACE_OPERATIONS } = await import(transport);
 const { createSourceWorkspace } = await import(
   await moduleUrl("../src/app/services/sourceWorkspace.ts", {
@@ -414,4 +418,68 @@ test("first hosted hydration replaces the local revision namespace with stored r
   assert.equal(owner.status.getSnapshot().generation, 1);
   assert.equal(owner.state.getSnapshot().byId.source.revision, 0);
   assert.equal(owner.state.getSnapshot().byId.source.record.title, "Baseline");
+});
+
+const { requestWorkspace } = await import(transport);
+const fields = { WorkspaceStatus: 'workspaceStatus', StartWorkspace: 'startWorkspace', ResetWorkspace: 'resetWorkspace', WorkspaceSnapshot: 'workspaceSnapshot', WorkspaceSource: 'workspaceSource', WorkspaceHistory: 'workspaceHistory', SaveSource: 'saveSource', RestoreSource: 'restoreSource' };
+const historyEvent = { id: 'event-1', sourceId: 'source', action: 'save', createdAt: workspace.createdAt, expectedRevision: 0, resultRevision: 1, actor: { principalId: 'prin_self', roleId: 'arc_lead', environment: 'res' } };
+const reply = (operation, fields = {}) => ({ code: 'OK', message: 'Accepted', workspace, ...(['WorkspaceStatus', 'StartWorkspace', 'ResetWorkspace'].includes(operation) ? { available: true } : operation === 'WorkspaceSnapshot' ? { sources: [entry(1)] } : operation === 'WorkspaceHistory' ? { events: [historyEvent] } : { source: entry(1), ...(['SaveSource', 'RestoreSource'].includes(operation) ? { changed: true, replayed: false } : {}) }), ...fields });
+const variables = { id: 'source', sourceId: 'source', input: { id: 'source', idempotencyKey: 'retained-identity' } };
+test('fetch receiver admits only the expected operation and owned bounded records', async (t) => {
+  let body;
+  t.mock.method(globalThis, 'fetch', async () => ({ ok: true, json: async () => body }));
+  for (const operation of Object.keys(fields)) {
+    const wire = reply(operation);
+    body = { data: { [fields[operation]]: wire, unrelated: { code: 'INVALID' } } };
+    const result = await requestWorkspace(operation, variables, scenario);
+    assert.equal(result.code, 'OK', operation);
+    assert.notEqual(result.workspace, wire.workspace);
+    if (result.source) assert.notEqual(result.source.tags, wire.source.tags);
+    if (result.events) assert.notEqual(result.events[0].actor, wire.events[0].actor);
+  }
+  for (const malformed of [null, {}, { data: [] }, { data: { wrong: reply('WorkspaceHistory') } }, { data: { workspaceHistory: reply('WorkspaceHistory') }, errors: [{ message: 'private server detail' }] },
+    ...[
+      { code: 'UNKNOWN' }, { message: 'x'.repeat(1001) }, { workspace: { ...workspace, eventCount: -1 } }, { workspace: { ...workspace, expiresAt: workspace.createdAt } },
+      { events: {} }, { events: [ { ...historyEvent, actor: null } ] }, { events: [ { ...historyEvent, resultRevision: 3 } ] }, { events: [{ ...historyEvent, sourceId: 'other' }] }, { events: [historyEvent, historyEvent] }, { events: Array(21).fill(historyEvent) },
+    ].map(patch => ({ data: { workspaceHistory: reply('WorkspaceHistory', patch) } }))]) {
+    body = malformed;
+    const result = await requestWorkspace('WorkspaceHistory', variables, scenario);
+    assert.equal(result.code, 'UNAVAILABLE');
+    assert.equal(result.events, undefined);
+    assert.doesNotMatch(result.message, /private server detail/);
+  }
+  for (const patch of [{ source: { ...entry(1), id: 'other' } }, { source: { ...entry(1), revision: 1.5 } }, { source: { ...entry(1), tags: ['x'.repeat(41)] } }, { source: null }, { changed: 'true' }]) {
+    body = { data: { saveSource: reply('SaveSource', patch) } };
+    assert.equal((await requestWorkspace('SaveSource', variables, scenario)).code, 'UNAVAILABLE');
+  }
+  body = { data: { saveSource: { ...reply('SaveSource'), code: 'CONFLICT', source: null, changed: false } } };
+  assert.equal((await requestWorkspace('SaveSource', variables, scenario)).code, 'CONFLICT');
+});
+
+test('lost fetch save acknowledgement retries the same command and accepts one event', async (t) => {
+  let saved = false, lost = true, accepted = 0;
+  const keys = [];
+  t.mock.method(globalThis, 'fetch', async (_, init) => {
+    const request = JSON.parse(init.body);
+    const operation = Object.keys(WORKSPACE_OPERATIONS).find(name => WORKSPACE_OPERATIONS[name] === request.extensions.persistedQuery.sha256Hash);
+    let value = reply(operation);
+    if (operation === 'WorkspaceSnapshot') value = reply(operation, { sources: [entry(saved ? 1 : 0)] });
+    if (operation === 'SaveSource') {
+      keys.push(request.variables.input.idempotencyKey);
+      if (!saved) { saved = true; accepted++; }
+      if (lost) { lost = false; throw new Error('lost receipt'); }
+      value = reply(operation, { replayed: true, source: { ...entry(1), ...request.variables.input.metadata } });
+    }
+    return { ok: true, json: async () => ({ data: { [fields[operation]]: value } }) };
+  });
+  const owner = createSourceWorkspace({ baseline, request: requestWorkspace, newId: () => 'same-command' });
+  await owner.initialize(scenario);
+  const first = await owner.execute(edit(), context);
+  assert.equal(first.ok, false);
+  assert.equal(owner.state.getSnapshot().byId.source.revision, 0);
+  const second = await owner.execute(edit(), context);
+  assert.equal(second.ok, true);
+  assert.equal(accepted, 1);
+  assert.deepEqual(keys, ['same-command', 'same-command']);
+  assert.equal(owner.state.getSnapshot().byId.source.record.title, 'Edited');
 });

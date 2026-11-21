@@ -7,12 +7,8 @@ import type {
 import { commandRefusal } from "./command";
 import type { PermissionDecision } from "./permissionPolicy";
 
-export const SOURCE_METADATA_LIMITS = {
-  title: 180,
-  description: 2000,
-  tags: 12,
-  tag: 40,
-} as const;
+import { SOURCE_METADATA_LIMITS } from '../../../shared/workspace-contract.mjs';
+export { SOURCE_METADATA_LIMITS };
 export type SourceMetadata = Pick<Source, "title" | "description" | "tags">;
 export interface SourceEntry {
   readonly record: Source;

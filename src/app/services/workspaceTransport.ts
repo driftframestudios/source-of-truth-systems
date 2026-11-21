@@ -1,3 +1,8 @@
+import {
+  decodeWorkspaceResponse,
+  type WorkspaceOutcome,
+} from "./workspaceResponse";
+import type { WORKSPACE_CODES } from "../../../shared/workspace-contract.mjs";
 import type { ScenarioInput } from "../../../shared/permission-scope.mjs";
 
 // Reviewed operation documents live in server/workspaces/operations; the API test checks these identities.
@@ -20,17 +25,7 @@ export const WORKSPACE_OPERATIONS = {
     "7a1850715aa07dc86311bf476a7fbe06047781971e518d71d82eac011b211923",
 } as const;
 export type WorkspaceOperation = keyof typeof WORKSPACE_OPERATIONS;
-export type WorkspaceCode =
-  | "OK"
-  | "LOCAL"
-  | "ABSENT"
-  | "EXPIRED"
-  | "DENIED"
-  | "INVALID"
-  | "CONFLICT"
-  | "QUOTA"
-  | "UNAVAILABLE"
-  | "MISSING";
+export type WorkspaceCode = (typeof WORKSPACE_CODES)[number];
 export interface VisitorWorkspace {
   readonly id: string;
   readonly createdAt: string;
@@ -67,23 +62,11 @@ export interface WorkspaceResponse {
   readonly changed?: boolean;
   readonly replayed?: boolean;
 }
-export type WorkspaceRequest = (
-  operation: WorkspaceOperation,
+export type WorkspaceRequest = <O extends WorkspaceOperation>(
+  operation: O,
   variables: Record<string, unknown>,
   scenario: ScenarioInput,
-) => Promise<WorkspaceResponse>;
-const CODES = new Set<WorkspaceCode>([
-  "OK",
-  "LOCAL",
-  "ABSENT",
-  "EXPIRED",
-  "DENIED",
-  "INVALID",
-  "CONFLICT",
-  "QUOTA",
-  "UNAVAILABLE",
-  "MISSING",
-]);
+) => Promise<WorkspaceOutcome<O>>;
 export const requestWorkspace: WorkspaceRequest = async (
   operation,
   variables,
@@ -112,16 +95,9 @@ export const requestWorkspace: WorkspaceRequest = async (
       }),
     });
     const body = await response.json();
-    if (
-      !response.ok ||
-      body.errors ||
-      !body.data ||
-      typeof body.data !== "object"
-    )
-      throw new Error("Workspace request unavailable.");
-    const value = Object.values(body.data)[0] as WorkspaceResponse | undefined;
-    if (!value || !CODES.has(value.code) || typeof value.message !== "string")
-      throw new Error("Workspace response unavailable.");
+    if (!response.ok) throw new Error("Workspace request unavailable.");
+    const value = decodeWorkspaceResponse(operation, body, variables);
+    if (!value) throw new Error("Workspace response unavailable.");
     return value;
   } catch {
     // A timed-out mutation may already be accepted; its caller retains the same command identity for retry.

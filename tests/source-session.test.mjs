@@ -21,6 +21,7 @@ const command = await moduleUrl("../src/app/services/command.ts");
 const { createSourceSession, createSourceCommands, selectSources } =
   await import(
     await moduleUrl("../src/app/services/sourceSession.ts", {
+    "../../../shared/workspace-contract.mjs": new URL("../shared/workspace-contract.mjs", import.meta.url).href,
       "./command": command,
     })
   );

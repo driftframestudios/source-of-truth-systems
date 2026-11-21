@@ -1,3 +1,4 @@
+import { WORKSPACE_WIRE_LIMITS } from '../../shared/workspace-contract.mjs';
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createSchema, createYoga } from "graphql-yoga";
@@ -13,7 +14,7 @@ import { createRequestAdmission } from "../security/request-admission.mjs";
 const API_LIMITS = Object.freeze({
   bodyBytes: 16_384,
   deadlineMs: 5_000,
-  history: 20,
+  history: WORKSPACE_WIRE_LIMITS.history,
 });
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
