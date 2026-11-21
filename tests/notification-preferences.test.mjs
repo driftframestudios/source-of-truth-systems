@@ -110,7 +110,10 @@ test("deadlines survive neighboring messages, preference changes and grouping wi
     state,
     notice("a-repeat", { createdAt: 5500, severity: "warning" }),
   );
-  assert.equal(state.notifications[0].occurrences, 2);
+  assert.equal(
+    state.notifications.find((record) => record.id === "a").occurrences,
+    2,
+  );
   assert.equal(nextNotificationDeadline(state.notifications), 6000);
   state = reduceNotifications(state, { type: "dismiss", id: "b" });
   state = reduceNotifications(state, {
@@ -213,5 +216,73 @@ test("correlation references distinguish equal-looking messages and optional not
   assert.equal(
     reduceNotifications(state, { type: "expire", now: 10000 }),
     state,
+  );
+});
+
+test("a displaced active repeat returns to view while capacity still rotates by accepted time", () => {
+  let state = createNotificationState();
+  for (let i = 0; i < 4; i++)
+    state = push(
+      state,
+      notice(`n${i}`, {
+        title: `Notice ${i}`,
+        createdAt: i * 100,
+        severity: "warning",
+      }),
+    );
+  assert.deepEqual(
+    notificationDisplay(state.notifications).toasts.map((n) => n.id),
+    ["n1", "n2", "n3"],
+  );
+  state = push(
+    state,
+    notice("repeat", {
+      title: "Notice 0",
+      createdAt: 1000,
+      severity: "warning",
+    }),
+  );
+  assert.deepEqual(
+    notificationDisplay(state.notifications).toasts.map((n) => n.id),
+    ["n2", "n3", "n0"],
+  );
+  assert.equal(nextNotificationDeadline(state.notifications), 5000);
+  for (let i = 4; i < 51; i++)
+    state = push(
+      state,
+      notice(`n${i}`, {
+        title: `Notice ${i}`,
+        createdAt: 1000 + i,
+        severity: "warning",
+      }),
+    );
+  assert.equal(
+    state.notifications.some((n) => n.id === "n0"),
+    false,
+  );
+  state = createNotificationState();
+  state = push(
+    state,
+    notice("first-banner", { kind: "banner", persistent: true }),
+  );
+  state = push(
+    state,
+    notice("second-banner", {
+      kind: "banner",
+      persistent: true,
+      title: "Second",
+    }),
+  );
+  state = push(
+    state,
+    notice("repeat-banner", {
+      kind: "banner",
+      persistent: true,
+      createdAt: 1000,
+    }),
+  );
+  assert.equal(
+    notificationDisplay(state.notifications).banners[0].id,
+    "first-banner",
   );
 });

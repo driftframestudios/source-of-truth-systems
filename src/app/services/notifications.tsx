@@ -1,10 +1,10 @@
 import './notifications.css';
-import { createContext, useContext, useCallback, useMemo, useReducer, useEffect, useState } from 'react';
+import { createContext, useContext, useCallback, useMemo, useReducer, useEffect, useState, lazy, Suspense } from 'react';
 import type { ReactNode } from 'react';
-import { AlertTriangle, AlertOctagon, Info, X, ShieldAlert } from 'lucide-react';
+import { LoadBoundary } from '../components/DeferredView';
 import type { AppNotification, ErrorSeverity, AppError, NotificationKind } from '../types';
-import { createNotificationState, reduceNotifications, nextNotificationDeadline, notificationDisplay, NOTIFICATION_LIMITS } from './notificationState';
-import type { NotificationPreferences, NotificationRecord } from './notificationState';
+import { createNotificationState, reduceNotifications, nextNotificationDeadline } from './notificationState';
+import type { NotificationPreferences } from './notificationState';
 
 interface NotificationContextValue {
   readonly notifications: ReadonlyArray<AppNotification>;
@@ -24,15 +24,14 @@ function rid(): string {
   return `n_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-const SEVERITY_ICONS = { info: Info, warning: AlertTriangle, error: AlertOctagon, critical: ShieldAlert };
-function SeverityIcon({ severity, size = 14 }: { severity: ErrorSeverity; size?: number }) {
-  const Icon = SEVERITY_ICONS[severity];
-  return <Icon size={size} className="notification-ink" aria-hidden="true" />;
-}
+const NotificationOverlay = lazy(() => import('./NotificationOverlay'));
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [{ notifications, preferences, omitted }, dispatch] = useReducer(reduceNotifications, undefined, createNotificationState);
 
+  const [feedbackStarted, setFeedbackStarted] = useState(false);
+  const hasFeedback = notifications.length > 0 || omitted > 0;
+  useEffect(() => { if (hasFeedback) setFeedbackStarted(true); }, [hasFeedback]);
   const deadline = nextNotificationDeadline(notifications);
   useEffect(() => {
     if (deadline === null) return;
@@ -79,7 +78,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   return (
     <NotificationContext.Provider value={value}>
       {children}
-      <NotificationOverlay notifications={notifications} omitted={omitted} dismiss={dismiss} clearAll={clearAll} />
+      {(hasFeedback || feedbackStarted) && <LoadBoundary label="feedback controls" fallback={hasFeedback &&
+        <section className="notification-fallback" aria-label="Recent feedback">
+          <p>Feedback controls couldn’t load. Your messages remain available here.</p>
+          {notifications.map(n => <p key={n.id}><strong>{n.title}</strong> · {n.message} {n.errorRef && <span>ref: {n.errorRef}</span>} <button aria-label={`Dismiss ${n.title}`} onClick={() => dismiss(n.id)}>Dismiss</button></p>)}
+          {omitted > 0 && <p>Capacity limit: {omitted} message details omitted.</p>}
+          <button onClick={clearAll}>Clear feedback</button>
+        </section>
+      }><Suspense fallback={<div className="notification-loading" role="status">Opening feedback…</div>}>
+        <NotificationOverlay notifications={notifications} omitted={omitted} dismiss={dismiss} clearAll={clearAll} />
+      </Suspense></LoadBoundary>}
     </NotificationContext.Provider>
   );
 }
@@ -90,56 +98,3 @@ export function useNotifications(): NotificationContextValue {
   return ctx;
 }
 
-function NotificationOverlay({ notifications, omitted, dismiss, clearAll }: {
-  notifications: ReadonlyArray<NotificationRecord>;
-  omitted: number;
-  dismiss: (id: string) => void;
-  clearAll: () => void;
-}) {
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const { banners, toasts } = notificationDisplay(notifications);
-  const hidden = notifications.length - banners.length - toasts.length;
-  return <>
-    {!reviewOpen && banners.length > 0 && <div className="notification-banners">
-      {banners.map(n => <NotificationItem key={n.id} n={n} presentation="banner" dismiss={dismiss} />)}
-    </div>}
-    <div className="notification-dock">
-      {!reviewOpen && <div className="notification-toasts">
-        {toasts.map(n => <NotificationItem key={n.id} n={n} presentation="toast" dismiss={dismiss} />)}
-      </div>}
-      {(reviewOpen || hidden > 0 || omitted > 0) && <details className="notification-review" open={reviewOpen}
-        onToggle={e => setReviewOpen(e.currentTarget.open)}>
-        <summary>Recent feedback ({notifications.length})</summary>
-        <section aria-label="Recent feedback" onKeyDown={e => {
-          if (e.key === 'Escape') { setReviewOpen(false); e.currentTarget.parentElement?.querySelector('summary')?.focus(); }
-        }}>
-          <div className="notification-review__rail">
-            <p>Up to {NOTIFICATION_LIMITS.retained} recent messages. New feedback replaces older details when full.</p>
-            <button onClick={clearAll}>Clear feedback</button>
-          </div>
-          {omitted > 0 && <p className="notification-review__omitted" role="status">Capacity limit: {formatCount(omitted)} message details omitted.</p>}
-          <div className="notification-review__list">
-            {[...notifications].reverse().map(n => <NotificationItem key={n.id} n={n} presentation="history" dismiss={dismiss} />)}
-            {notifications.length === 0 && <p className="notification-review__empty">Feedback is clear.</p>}
-          </div>
-        </section>
-      </details>}
-    </div>
-  </>;
-}
-function formatCount(count: number) { return count >= NOTIFICATION_LIMITS.counter ? `${count}+` : String(count); }
-function NotificationItem({ n, presentation, dismiss }: {
-  n: NotificationRecord; presentation: 'toast' | 'banner' | 'history'; dismiss: (id: string) => void;
-}) {
-  return <article className={`notification-item notification-item--${presentation}`} data-severity={n.severity}
-    role={presentation === 'history' ? undefined : n.severity === 'critical' || n.severity === 'error' ? 'alert' : 'status'} aria-label={n.title}>
-    <SeverityIcon severity={n.severity} />
-    <div className="notification-item__body">
-      <span className="notification-title">{n.title}</span>
-      {n.occurrences > 1 && <span className="notification-repeat" aria-label={`${formatCount(n.occurrences)} occurrences`}>×{formatCount(n.occurrences)}</span>}
-      <span className="notification-message">{n.message}</span>
-      {n.errorRef && presentation !== 'banner' && <span className="notification-reference">ref: {n.errorRef}</span>}
-    </div>
-    <button onClick={() => dismiss(n.id)} className="notification-dismiss" aria-label={`Dismiss ${n.title}`}><X size={12} /></button>
-  </article>;
-}

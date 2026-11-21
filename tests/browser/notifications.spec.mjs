@@ -80,3 +80,28 @@ test('bursts retain bounded readable feedback with an explicit capacity receipt 
   await expect(review.getByRole('article')).toHaveCount(0);
   await expect(review.getByText('Feedback is clear.',{exact:true})).toBeVisible();
 });
+
+
+test('a repeated hidden toast returns to the visible stack before its original expiry', async ({page}) => {
+  await openClockedLab(page);
+  await page.getByRole('button',{name:'success toast',exact:true}).click();
+  for(const value of ['SOURCE_FETCH_FAILED','INSTRUCTION_CONFLICT','STREAM_TIMEOUT']) await code(page,value).click();
+  await expect(page.locator('.notification-toasts').getByText('Success notice preview',{exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'success toast',exact:true}).click();
+  await expect(page.locator('.notification-toasts').getByRole('status',{name:'Success notice preview',exact:true}).getByLabel('2 occurrences')).toBeVisible();
+  await page.clock.runFor(5000);
+  await expect(page.locator('.notification-toasts .notification-item')).toHaveCount(0);
+});
+
+test('an unavailable feedback chunk leaves messages and dismiss controls usable', async ({page}) => {
+  await page.route('**/assets/NotificationOverlay-*.js', route=>route.abort());
+  await openClockedLab(page);
+  await code(page,'SOURCE_FETCH_FAILED').click();
+  const fallback=page.getByRole('region',{name:'Recent feedback',exact:true});
+  await expect(fallback).toContainText('Feedback controls couldn’t load');
+  await expect(fallback).toContainText('Source fetch failed');
+  await expect(fallback).toContainText('ref: err_');
+  await fallback.getByRole('button',{name:'Dismiss Source fetch failed',exact:true}).click();
+  await expect(fallback).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Error Lab',exact:true})).toBeVisible();
+});

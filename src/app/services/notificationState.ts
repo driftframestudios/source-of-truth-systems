@@ -119,23 +119,26 @@ export function reduceNotifications(
       if (duplicate)
         return {
           ...settled,
-          notifications: settled.notifications.map((record) =>
-            record === duplicate
-              ? { ...record, occurrences: increment(record.occurrences) }
-              : record,
-          ),
+          notifications: [
+            ...settled.notifications.filter((record) => record !== duplicate),
+            { ...duplicate, occurrences: increment(duplicate.occurrences) },
+          ],
         };
       const notifications = [...settled.notifications];
       let omitted = settled.omitted;
       if (notifications.length >= NOTIFICATION_LIMITS.retained) {
-        const ordinary = notifications.findIndex(
+        const ordinary = notifications.filter(
           (record) => !requiresAttention(record),
         );
         omitted = increment(omitted);
         // Optional incoming information yields capacity to retained attention-bearing feedback.
-        if (ordinary === -1 && !requiresAttention(incoming))
+        if (!ordinary.length && !requiresAttention(incoming))
           return { ...settled, omitted };
-        notifications.splice(ordinary === -1 ? 0 : ordinary, 1);
+        const candidates = ordinary.length ? ordinary : notifications;
+        const oldest = candidates.reduce((oldest, record) =>
+          record.createdAt < oldest.createdAt ? record : oldest,
+        );
+        notifications.splice(notifications.indexOf(oldest), 1);
       }
       notifications.push({ ...incoming, occurrences: 1, active: true });
       return { ...settled, notifications, omitted };
