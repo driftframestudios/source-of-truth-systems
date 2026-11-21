@@ -16,7 +16,7 @@ const access = await moduleUrl('../src/app/services/accessService.ts', {'../type
 const { permissionCatalog: catalog, scenarioInput } = await import(await moduleUrl('../src/app/services/permissionScope.ts', {'./accessService':access}));
 const { prepareGrantSave, resetScenarioGrants } = await import(await moduleUrl('../src/app/services/scenarioGrants.ts', {'../types/access':types,'../../../shared/permission-scope.mjs':shared}));
 const records = await moduleUrl('../src/app/services/plateHistory/records.ts');
-const { cacheFor, publishScopedHistory, projectScopedPlate, canonicalWell } = await import(await moduleUrl('../src/app/services/plateHistory/cache.ts', {'./records':records,'../../../../shared/permission-scope.mjs':shared}));
+const { createHistoryCache, HISTORY_CACHE_LIMITS, cacheFor, publishScopedHistory, projectScopedPlate, canonicalWell } = await import(await moduleUrl('../src/app/services/plateHistory/cache.ts', {'./records':records,'../../../../shared/permission-scope.mjs':shared}));
 const { requestLatestHistory } = await import(await moduleUrl('../src/app/services/plateHistory/request.ts'));
 const resultData = await moduleUrl('../src/app/data/wellResults.ts');
 const { HistoryAccessDenied, HistorySourceUnavailable, parsePlateHistory, readPlateHistory } = await import(await moduleUrl('../src/app/services/plateHistory/read.ts', {
@@ -104,7 +104,7 @@ test('64 accepted cell changes keep no-op saves available; overflow retains the 
 });
 
 test('late reads cannot populate either scope after the current scenario changes before effect cleanup', async () => {
-  const store = new Map();
+  const store = createHistoryCache();
   const oldScope = scope();
   const newScope = scope({roleId:'viewer'});
   const oldPartition = cacheFor(store,oldScope.key);
@@ -124,7 +124,7 @@ test('late reads cannot populate either scope after the current scenario changes
 
 test('denied, missing and empty reads replace fixture projections while unavailable remains scoped', () => {
   const current = scope();
-  const partition = cacheFor(new Map(),current.key);
+  const partition = cacheFor(createHistoryCache(),current.key);
   assert.equal(publishScopedHistory(partition,'plate/A1',current.key,current.key,{error:true}),'unavailable');
   assert.equal(projectScopedPlate(current,'plate',wells,examples,partition,ownership).stacks.get('A1').length,1);
   publishScopedHistory(partition,'plate/A1',current.key,current.key,{value:{kind:'denied'}});
@@ -138,7 +138,7 @@ test('denied, missing and empty reads replace fixture projections while unavaila
   assert.equal(projection.wells.length,0);
   assert.equal(projection.stacks.size,0);
   assert.equal(projection.historyFor('A2').missing,true);
-  const fresh = cacheFor(new Map(),current.key);
+  const fresh = cacheFor(createHistoryCache(),current.key);
   const storedWell = {...wells[0],assay:'rna_seq',sampleId:'stored-sample'};
   publishScopedHistory(fresh,'plate/A1',current.key,current.key,{value:{kind:'ready',history:{mode:'STORED',missing:false,well:storedWell,results:[]}}});
   assert.equal(canonicalWell('plate','A1',wells,fresh).sampleId,'stored-sample');
@@ -152,12 +152,12 @@ test('revoking plate access removes result indexes and aliases to hidden canonic
   const administrator = scope({roleId:'admin'});
   const saved = prepareGrantSave(administrator,'prin_self',{...administrator.matrices.prin_self,'plate_map::us_east':'none'});
   assert.equal(saved.ok,true);
-  const denied = projectScopedPlate(saved.scope,'plate',wells,examples,cacheFor(new Map(),saved.scope.key),ownership);
+  const denied = projectScopedPlate(saved.scope,'plate',wells,examples,cacheFor(createHistoryCache(),saved.scope.key),ownership);
   assert.deepEqual(denied.wells,[]);
   assert.equal(denied.stacks.size,0);
   const current = scope();
-  const partition = cacheFor(new Map(),current.key);
-  partition.blocked.set('plate/A2','denied');
+  const partition = cacheFor(createHistoryCache(),current.key);
+  publishScopedHistory(partition,'plate/A2',current.key,current.key,{value:{kind:'denied'}});
   const projection = projectScopedPlate(current,'plate',wells,examples,partition,ownership);
   assert.equal(projection.stacks.get('A1')[0].supersedes,undefined);
   assert.equal(projection.stacks.has('A2'),false);
@@ -190,12 +190,12 @@ test('a stored anchor changes result geography, and contradictory specimen links
   ]};
   const bundled = [{...wells[0],sampleId:'SPX-US'}];
   const stored = {...wells[0],sampleId:'SPX-EU'};
-  const partition = cacheFor(new Map(),accepted.scope.key);
-  partition.histories.set('plate/A1',{mode:'STORED',missing:false,well:stored,results:[result('one','A1')]});
+  const partition = cacheFor(createHistoryCache(),accepted.scope.key);
+  publishScopedHistory(partition,'plate/A1',accepted.scope.key,accepted.scope.key,{value:{kind:'ready',history:{mode:'STORED',missing:false,well:stored,results:[result('one','A1')]}}});
   let projection = projectScopedPlate(accepted.scope,'plate',bundled,examples,partition,localOwnership);
   assert.equal(projection.wells[0].sampleId,'SPX-EU');
   assert.deepEqual(projection.stacks.get('A1'),[]);
-  partition.histories.set('plate/A1',{mode:'STORED',missing:false,well:stored,results:[result('mismatch','A1',{specimenId:'SPX-US'})]});
+  publishScopedHistory(partition,'plate/A1',accepted.scope.key,accepted.scope.key,{value:{kind:'ready',history:{mode:'STORED',missing:false,well:stored,results:[result('mismatch','A1',{specimenId:'SPX-US'})]}}});
   projection = projectScopedPlate(administrator,'plate',bundled,examples,partition,localOwnership);
   assert.deepEqual(projection.stacks.get('A1'),[]);
 });
@@ -203,7 +203,7 @@ test('a stored anchor changes result geography, and contradictory specimen links
 test('authoritatively unavailable ownership suppresses examples until a confirmed retry succeeds', () => {
   assert.throws(()=>parsePlateHistory({errors:[{extensions:{code:'OWNERSHIP_UNAVAILABLE'}}]},'plate','A1'),HistorySourceUnavailable);
   const current = scope();
-  const partition = cacheFor(new Map(),current.key);
+  const partition = cacheFor(createHistoryCache(),current.key);
   publishScopedHistory(partition,'plate/A1',current.key,current.key,{value:{kind:'unavailable'}});
   let projection = projectScopedPlate(current,'plate',wells,examples,partition,ownership);
   assert.equal(projection.wells.length,1);
@@ -216,4 +216,76 @@ test('authoritatively unavailable ownership suppresses examples until a confirme
   assert.equal(partition.blocked.has('plate/A1'),false);
   assert.deepEqual(projection.stacks.get('A1'),[]);
   assert.equal(projection.wells.length,2);
+});
+
+test('recent scopes remain bounded and evicted in-flight receipts stay retired even after returning to the same key', async () => {
+  const cache = createHistoryCache();
+  const first = cacheFor(cache, 'scope-0');
+  let finish;
+  requestLatestHistory(() => new Promise(resolve => { finish = resolve; }), receipt => publishScopedHistory(first, 'plate/A1', 'scope-0', 'scope-0', receipt));
+  await Promise.resolve();
+  for (let index = 1; index <= 12; index++) {
+    const partition = cacheFor(cache, `scope-${index}`);
+    publishScopedHistory(partition, 'plate/A1', `scope-${index}`, `scope-${index}`, { value: { kind: 'ready', history: { mode: 'STORED', missing: false, well: wells[0], results: [] } } });
+    assert.ok(cache.size <= HISTORY_CACHE_LIMITS.scopes);
+    assert.ok(cache.retainedEntries <= HISTORY_CACHE_LIMITS.scopes);
+  }
+  assert.equal(first.active, false);
+  assert.equal(first.histories.size, 0);
+  const replacement = cacheFor(cache, 'scope-0');
+  assert.notEqual(replacement, first);
+  finish({ kind: 'ready', history: { mode: 'STORED', missing: false, well: wells[0], results: [result('late', 'A1')] } });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(first.histories.size, 0);
+  assert.equal(replacement.histories.size, 0);
+  const recent = cacheFor(cache, 'scope-12');
+  assert.equal(recent.histories.size, 1);
+  cacheFor(cache, 'new-1'); cacheFor(cache, 'new-2');
+  assert.equal(cacheFor(cache, 'scope-12'), recent); // recent use refreshes its retention position
+});
+
+test('one eligible publication updates subscribed receivers with one stable projection revision', () => {
+  const current = scope();
+  const partition = cacheFor(createHistoryCache(), current.key);
+  const project = () => projectScopedPlate(current, 'plate', wells, examples, partition, ownership);
+  const before = project();
+  assert.equal(project(), before);
+  const graphic = [], companion = [];
+  const stopGraphic = partition.subscribe(() => graphic.push([partition.getSnapshot(), project()]));
+  const stopCompanion = partition.subscribe(() => companion.push([partition.getSnapshot(), project()]));
+  publishScopedHistory(partition, 'plate/A1', current.key, current.key, { value: { kind: 'ready', history: { mode: 'STORED', missing: false, well: wells[0], results: [result('fresh', 'A1')] } } });
+  assert.equal(graphic.length, 1);
+  assert.equal(companion.length, 1);
+  assert.equal(graphic[0][0], companion[0][0]);
+  assert.equal(graphic[0][1], companion[0][1]);
+  assert.notEqual(project(), before);
+  assert.equal(project().stacks.get('A1')[0].id, 'fresh');
+  assert.equal(before.historyFor('A1'), undefined); // an older projection keeps its own complete snapshot
+  const accepted = project();
+  publishScopedHistory(partition, 'plate/A1', current.key, 'another-scope', { value: { kind: 'denied' } });
+  assert.equal(project(), accepted);
+  stopGraphic(); stopCompanion();
+  partition.retry('plate/A1');
+  assert.equal(graphic.length, 1);
+  assert.notEqual(project(), accepted);
+});
+
+test('fresh 96-well projection uses one coordinate pass and repeated snapshots reuse it', t => {
+  let rowReads = 0;
+  const fullPlate = Array.from({ length: 96 }, (_, index) => ({ get row() { rowReads++; return Math.floor(index / 12); }, col: index % 12, role: 'sample' }));
+  const current = scope();
+  const partition = cacheFor(createHistoryCache(), current.key);
+  const empty = new Map();
+  const projection = projectScopedPlate(current, 'plate', fullPlate, empty, partition, ownership);
+  assert.equal(projection.wells.length, 96);
+  // Policy/field projection also reads coordinates. This bound distinguishes the former triangular find scans.
+  assert.ok(rowReads < 96 * 10, `coordinate work: ${rowReads}`);
+  const firstReads = rowReads;
+  assert.equal(projectScopedPlate(current, 'plate', fullPlate, empty, partition, ownership), projection);
+  assert.equal(rowReads, firstReads);
+  canonicalWell('plate', 'H12', fullPlate, partition);
+  const indexReads = rowReads;
+  canonicalWell('plate', 'A1', fullPlate, partition);
+  assert.equal(rowReads, indexReads);
+  t.diagnostic(`Fresh 96-well projection: ${firstReads} row reads; unchanged projection: 0 additional reads.`);
 });

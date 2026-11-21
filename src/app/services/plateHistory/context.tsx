@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import type { Well } from '../../types';
 import { HistoryAccessDenied, HistorySourceUnavailable, readPlateHistory } from './read';
@@ -9,10 +9,10 @@ import { scenarioInput } from '../permissionScope';
 import { canReadResult, canReadWell } from '../../../../shared/permission-scope.mjs';
 import { PLATE_OWNERSHIP, PLATE_WELLS } from './ownership';
 import { historyKey, isPlateTarget, resolvePlateResult, type PlateTarget, type ResultStacks } from './records';
-import { cacheFor, canonicalWell, projectScopedPlate, publishScopedHistory, type HistoryCacheStore } from './cache';
+import { createHistoryCache, cacheFor, canonicalWell, projectScopedPlate, publishScopedHistory, type HistoryCacheStore } from './cache';
 
 const HistoryCache = createContext<HistoryCacheStore | null>(null);
-const HISTORY_CACHE = { create: (): HistoryCacheStore => new Map() };
+const HISTORY_CACHE = { create: createHistoryCache };
 
 /** Read partitions follow policy scope; accepted edits keep their independent session owner. */
 export function PlateHistoryProvider({ children }: { children: ReactNode }) {
@@ -62,6 +62,7 @@ export function usePlateHistory(plateId: string, wellId: string | null, active: 
   const { scope, getScope } = usePermissionScope();
   const scopeKey = scope.key;
   const partition = cacheFor(cache, scopeKey);
+  const revision = useSyncExternalStore(partition.subscribe, partition.getSnapshot);
   const key = historyKey(plateId, wellId ?? '');
   const [state, setState] = useState<HistoryState | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -85,13 +86,13 @@ export function usePlateHistory(plateId: string, wellId: string | null, active: 
     });
   }, [active, plateId, wellId, key, scopeKey, scope, partition, denied, getScope, attempt]);
 
-  const projected = useMemo(() => projectScopedPlate(scope, plateId, wells, examples, partition, PLATE_OWNERSHIP), [scope, plateId, wells, examples, partition, state, attempt]);
+  const projected = useMemo(() => projectScopedPlate(scope, plateId, wells, examples, partition, PLATE_OWNERSHIP), [scope, plateId, wells, examples, partition, revision]);
   const current = state?.key === key && state.scopeKey === scopeKey ? state : null;
   const history = denied || !wellId ? undefined : projected.historyFor(wellId);
   const phase: HistoryPhase = denied ? 'denied' : !active || !wellId ? 'idle' : history ? 'ready' : current?.phase ?? partition.blocked.get(key) ?? 'loading';
   const retry = () => {
     if (getScope().key !== scopeKey || denied) return;
-    partition.histories.delete(key);
+    partition.retry(key);
     setState({ key, scopeKey, phase: 'loading' });
     setAttempt(value => value + 1);
   };
