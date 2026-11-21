@@ -71,16 +71,18 @@ export function SourceWorkspaceHistory({
   read: (id: string) => Promise<WorkspaceResponse>;
 }) {
   const [open, setOpen] = useState(false);
-  const [events, setEvents] = useState<ReadonlyArray<WorkspaceEvent>>([]);
+  const historyKey = JSON.stringify([sourceId, scopeKey, status.workspace?.id]);
+  const [received, setReceived] = useState<{ key: string; events: ReadonlyArray<WorkspaceEvent> } | null>(null);
+  const events = received?.key === historyKey ? received.events : [];
   const [message, setMessage] = useState("");
   useEffect(() => {
     let current = true;
-    setEvents([]);
+
     if (open && status.phase === "active") {
       setMessage("Loading saved edits…");
       void read(sourceId).then((response) => {
         if (!current) return;
-        setEvents(response.events ?? []);
+        if (response.code === 'OK' && response.events) setReceived({ key: historyKey, events: response.events });
         setMessage(
           response.code === "OK"
             ? response.events?.length
@@ -100,6 +102,7 @@ export function SourceWorkspaceHistory({
     status.workspace?.id,
     status.workspace?.eventCount,
     scopeKey,
+    historyKey,
     read,
   ]);
   if (status.phase !== "active") return null;

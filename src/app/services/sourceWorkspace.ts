@@ -330,6 +330,11 @@ export function createSourceWorkspace({
           return failure(
             "This workspace or permission scenario changed. Your draft is still available.",
           );
+        if (response.code === "OK" && response.workspace?.id !== workspaceId) {
+          return failure(
+            "The workspace changed before this receipt arrived. Keep your draft and reload the workspace.",
+          );
+        }
         if (response.code === "OK" && response.source) {
           merge([response.source]);
           const old = status.getSnapshot().workspace!;
@@ -418,7 +423,29 @@ export function createSourceWorkspace({
     execute,
     start,
     reset,
-    history: (sourceId: string, scenario: ScenarioInput) =>
-      request("WorkspaceHistory", { sourceId, limit: 10 }, scenario),
+    async history(
+      sourceId: string,
+      scenario: ScenarioInput,
+    ): Promise<WorkspaceResponse> {
+      const version = generation;
+      const workspaceId = status.getSnapshot().workspace?.id;
+      const response = await request(
+        "WorkspaceHistory",
+        { sourceId, limit: 10 },
+        scenario,
+      );
+      if (
+        version !== generation ||
+        workspaceId !== status.getSnapshot().workspace?.id ||
+        (response.code === "OK" && response.workspace?.id !== workspaceId)
+      ) {
+        return {
+          code: "UNAVAILABLE",
+          message:
+            "The workspace changed before history arrived. Reopen saved source edits to retry.",
+        };
+      }
+      return response;
+    },
   };
 }
