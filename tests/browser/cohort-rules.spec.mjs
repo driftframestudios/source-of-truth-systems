@@ -191,5 +191,5 @@ test('each rejected cross-group link attempt returns feedback', async ({page}) =
   await link.click();
   await expect(page.getByText('Choose cards in one group',{exact:true})).toHaveCount(1);
   await link.click();
-  await expect(page.getByText('Choose cards in one group',{exact:true})).toHaveCount(2);
+  await expect(page.getByRole('status',{name:'Choose cards in one group',exact:true}).getByLabel('2 occurrences',{exact:true})).toBeVisible();
 });
