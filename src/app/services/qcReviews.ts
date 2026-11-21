@@ -1,6 +1,6 @@
 import type { QCGate } from "../types";
 import type { CommandRefusal, CommandResult, WorkflowCheck } from "./command";
-import { commandRefusal } from "./command";
+import { commandRefusal, identifyRefusal } from "./command";
 
 export type GateReview =
   "unreviewed" | "acknowledged" | "hold_recorded" | "rerun_requested";
@@ -84,7 +84,7 @@ export function createQcReviewCommands(owner: {
       action: CAPABILITIES[gate.stage],
       subjectId: gate.id,
     });
-    if (!access.ok) return access;
+    if (!access.ok) return identifyRefusal(access);
     if (!gateReviewEvents(gate, state.byId[gate.id]).includes(command.event)) {
       return commandRefusal(
         "transition",

@@ -1,6 +1,12 @@
 import type { Source } from "../types";
 import type { ScenarioInput } from "../../../shared/permission-scope.mjs";
-import type { CommandResult } from "./command";
+import {
+  commandRefusal,
+  failureCode,
+  workspaceRefusal,
+  type CommandResult,
+  type FailureCode,
+} from "./command";
 import { createSessionState } from "./browserSession";
 import {
   createSourceSession,
@@ -28,6 +34,7 @@ export interface SourceWorkspaceStatus {
   readonly message: string;
   readonly busy: boolean;
   readonly generation: number;
+  readonly recoveryCode?: FailureCode;
 }
 interface CommandContext {
   readonly scenario: ScenarioInput;
@@ -36,11 +43,22 @@ interface CommandContext {
   >[0]["checkPermission"];
   readonly isCurrent: () => boolean;
 }
-const failure = (reason: string): CommandResult => ({
-  ok: false,
-  kind: "unavailable",
-  reason,
-});
+const failure = (
+  reason: string,
+  code: FailureCode = "OWNER_UNAVAILABLE",
+): CommandResult => commandRefusal("unavailable", reason, code);
+const statusFailure = (status: SourceWorkspaceStatus): CommandResult =>
+  failure(
+    status.message,
+    status.recoveryCode ??
+      (status.phase === "expired"
+        ? "WORKSPACE_EXPIRED"
+        : status.phase === "absent"
+          ? "WORKSPACE_ABSENT"
+          : status.phase === "denied"
+            ? "PERMISSION_DENIED"
+            : "OWNER_UNAVAILABLE"),
+  );
 const normalize = (command: SourceCommand) =>
   command.type === "restore"
     ? command
@@ -80,7 +98,12 @@ export function createSourceWorkspace({
   let loading: Promise<void> | null = null;
   const pending = new Map<string, string>();
   const update = (patch: Partial<SourceWorkspaceStatus>) =>
-    status.update((current) => ({ ...current, ...patch, generation }));
+    status.update((current) => ({
+      ...current,
+      ...(patch.phase ? { recoveryCode: undefined } : {}),
+      ...patch,
+      generation,
+    }));
   function merge(sources: ReadonlyArray<WorkspaceSource>) {
     state.update((current) => {
       const byId = { ...current.byId };
@@ -132,6 +155,7 @@ export function createSourceWorkspace({
             ? "denied"
             : "unavailable",
       message: response.message,
+      recoveryCode: failureCode(workspaceRefusal(response)),
     });
   }
   async function initialize(
@@ -192,6 +216,7 @@ export function createSourceWorkspace({
             phase: "unavailable",
             message:
               "The source workspace could not load. Keep your draft and retry.",
+            recoveryCode: "TRANSPORT_UNCONFIRMED",
           });
       }
     })();
@@ -205,7 +230,10 @@ export function createSourceWorkspace({
     isCurrent = () => true,
   ): Promise<CommandResult> {
     if (!withinCommand && status.getSnapshot().busy)
-      return failure("Finish the current workspace request first.");
+      return failure(
+        "Finish the current workspace request first.",
+        "REQUEST_BUSY",
+      );
     if (!withinCommand) update({ busy: true });
     const version = generation;
     const workspaceId = status.getSnapshot().workspace?.id;
@@ -218,10 +246,11 @@ export function createSourceWorkspace({
       if (!current())
         return failure(
           "The workspace or permission scenario changed. Review the current controls and retry.",
+          "SCOPE_CHANGED",
         );
       if (response.code !== "OK" || !response.workspace) {
         receiveUnavailable(response);
-        return failure(response.message);
+        return workspaceRefusal(response);
       }
       generation++;
       readSequence++;
@@ -238,15 +267,16 @@ export function createSourceWorkspace({
       if (!isCurrent() || startedVersion !== generation)
         return failure(
           "The workspace or permission scenario changed. Your draft is still available.",
+          "SCOPE_CHANGED",
         );
       return status.getSnapshot().phase === "active"
         ? { ok: true, changed: false }
-        : failure(status.getSnapshot().message);
+        : statusFailure(status.getSnapshot());
     } catch {
       const message =
         "The workspace could not start. Keep your draft and retry.";
       if (current()) update({ message });
-      return failure(message);
+      return failure(message, "TRANSPORT_UNCONFIRMED");
     } finally {
       if (!withinCommand) update({ busy: false });
     }
@@ -256,7 +286,7 @@ export function createSourceWorkspace({
     context: CommandContext,
   ): Promise<CommandResult> {
     if (commandInFlight || status.getSnapshot().busy)
-      return failure("This source request is still running.");
+      return failure("This source request is still running.", "REQUEST_BUSY");
     commandInFlight = true;
     update({ busy: true });
     try {
@@ -267,6 +297,7 @@ export function createSourceWorkspace({
       if (!context.isCurrent())
         return failure(
           "The permission scenario changed. Review the current controls and retry.",
+          "SCOPE_CHANGED",
         );
       let current = status.getSnapshot();
       const prepared = prepareSourceCommand(
@@ -288,11 +319,12 @@ export function createSourceWorkspace({
         if (!context.isCurrent())
           return failure(
             "The permission scenario changed. Review the current controls and retry.",
+            "SCOPE_CHANGED",
           );
         current = status.getSnapshot();
       }
       if (current.phase !== "active" || !current.workspace)
-        return failure(current.message);
+        return statusFailure(current);
       const version = generation;
       const workspaceId = current.workspace.id;
       const intent = normalize(command);
@@ -329,10 +361,12 @@ export function createSourceWorkspace({
         )
           return failure(
             "This workspace or permission scenario changed. Your draft is still available.",
+            "SCOPE_CHANGED",
           );
         if (response.code === "OK" && response.workspace?.id !== workspaceId) {
           return failure(
             "The workspace changed before this receipt arrived. Keep your draft and reload the workspace.",
+            "SCOPE_CHANGED",
           );
         }
         if (response.code === "OK" && response.source) {
@@ -357,10 +391,11 @@ export function createSourceWorkspace({
         else if (response.code === "EXPIRED" || response.code === "ABSENT")
           update({ phase: "expired", message: response.message });
         else update({ message: response.message });
-        return failure(response.message);
+        return workspaceRefusal(response);
       } catch {
         return failure(
           "The workspace could not confirm this edit. Keep your draft and retry.",
+          "TRANSPORT_UNCONFIRMED",
         );
       } finally {
         if (version === generation) update({ busy: false });
@@ -377,6 +412,7 @@ export function createSourceWorkspace({
     if (status.getSnapshot().busy)
       return failure(
         "Finish the current source request before resetting the workspace.",
+        "REQUEST_BUSY",
       );
     update({ busy: true });
     const version = generation;
@@ -390,10 +426,11 @@ export function createSourceWorkspace({
       if (!current())
         return failure(
           "The workspace or permission scenario changed. Review the current controls and retry.",
+          "SCOPE_CHANGED",
         );
       if (response.code !== "ABSENT") {
         update({ message: response.message });
-        return failure(response.message);
+        return workspaceRefusal(response);
       }
       generation++;
       readSequence++;
@@ -411,7 +448,7 @@ export function createSourceWorkspace({
       const message =
         "The workspace could not confirm the reset. Keep your draft and retry.";
       if (current()) update({ message });
-      return failure(message);
+      return failure(message, "TRANSPORT_UNCONFIRMED");
     } finally {
       update({ busy: false });
     }

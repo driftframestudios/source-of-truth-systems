@@ -39,8 +39,9 @@ const result = (code, message, fields = {}) => ({
   replayed: false,
   ...fields,
 });
+const DOMAIN_REFUSALS = Object.freeze({ INVALID_INPUT: 'INVALID', MISSING_RECORD: 'MISSING', STALE_REVISION: 'CONFLICT', PERMISSION_DENIED: 'DENIED' });
 const refuse = (value) =>
-  result(REFUSALS[value.kind] ?? "DENIED", value.reason);
+  result(DOMAIN_REFUSALS[value.code] ?? REFUSALS[value.kind] ?? "DENIED", value.reason);
 const absent = (tokenHash) =>
   result(
     tokenHash ? "EXPIRED" : "ABSENT",

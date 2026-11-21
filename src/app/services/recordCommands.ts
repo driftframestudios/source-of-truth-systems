@@ -1,6 +1,6 @@
 import { resolveGeography } from '../../../shared/permission-scope.mjs';
 import type { CommandCheck, CommandPermission, CommandRefusal, CommandResult } from './command';
-import { commandRefusal } from './command';
+import { commandRefusal, identifyRefusal } from './command';
 import { recordSessionReducer } from './recordSession';
 import type { RecordSessionAction, RecordSessionState } from './recordSession';
 
@@ -35,7 +35,7 @@ export function createRecordCommands(owner: {
     if (!geography) return commandRefusal('unavailable', 'This specimen needs a known data geography before its workflow can change.');
     // Workflow commands use their resource contract; clinical approval requires clinical-report clearance.
     const access = owner.checkPermission({ action: contract.action, resource: contract.resource, consent: specimen.consent, geography, subjectId: specimen.id });
-    if (!access.ok) return access;
+    if (!access.ok) return identifyRefusal(access);
     const next = recordSessionReducer(state, command);
     if (next === state) return commandRefusal('transition', 'This action has already finished or the workflow has moved on.');
     return { ok: true, next };

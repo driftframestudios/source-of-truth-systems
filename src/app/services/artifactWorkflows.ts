@@ -1,6 +1,6 @@
 import type { Artifact, Source } from "../types";
 import type { CommandPermission, CommandResult } from "./command";
-import { commandRefusal } from "./command";
+import { commandRefusal, identifyRefusal } from "./command";
 import type { PermissionDecision } from "./permissionPolicy";
 
 export interface ArtifactLocalCheck {
@@ -138,11 +138,12 @@ export function createArtifactCommands(owner: {
         action: command.type === "check" ? "analysis.run" : "workspace.edit",
         subjectId: record.id,
       });
-      if (!permission.ok) return permission;
+      if (!permission.ok) return identifyRefusal(permission);
       if (record.revision !== command.revision)
         return commandRefusal(
           "transition",
           "This artifact changed. Review its current proposal before continuing.",
+          "STALE_REVISION",
         );
       let next: ArtifactRecord;
       switch (command.type) {
