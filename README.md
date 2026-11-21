@@ -117,7 +117,7 @@ The repository retains its Figma Make entry scripts and Vite adapter. They provi
 
 ## Dependencies and continuation
 
-React, TypeScript, Vite, Tailwind and Motion shape the browser experience. The Node server uses GraphQL Yoga and the `pg` PostgreSQL driver; those dependencies remain outside the browser bundle. [Shared contracts](shared/README.md) preserve record and permission meaning across both sides. The root package and lockfile own the toolchain.
+React, TypeScript, Vite, Tailwind and Motion shape the browser experience. The Node server uses GraphQL Yoga and the `pg` PostgreSQL driver; those dependencies remain outside the browser bundle. [Shared contracts](shared/README.md) preserve record and permission meaning across both sides. The root package and lockfile own the toolchain. [Dependency ownership](docs/deployment.md#dependency-ownership) explains the full build installation and the smaller production-only Node package set.
 
 Extend an existing state or command owner before adding a parallel store. Keep synthetic examples useful, preserve current interactions, and test the behavior your change affects. [Local skills and runbooks](AGENTS.md) support human and AI-assisted development without access to another workspace. Public issues and pull requests are the contribution route; [CONTRIBUTING](CONTRIBUTING.md) explains review and how accepted contributions retain credit.
 
