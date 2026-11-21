@@ -4,7 +4,7 @@ import type {
   CommandRefusal,
   CommandResult,
 } from "./command";
-import { commandRefusal } from "./command";
+import { commandRefusal, identifyRefusal } from "./command";
 import type { PermissionDecision } from "./permissionPolicy";
 
 import { SOURCE_METADATA_LIMITS } from '../../../shared/workspace-contract.mjs';
@@ -133,18 +133,20 @@ export function prepareSourceCommand(
     action: "workspace.edit",
     subjectId: original.id,
   });
-  if (!permission.ok) return permission;
+  if (!permission.ok) return identifyRefusal(permission);
   if (entry.revision !== command.revision)
     return commandRefusal(
       "transition",
       "This source changed while you were editing. Cancel and reopen the editor to use its current metadata.",
+      "STALE_REVISION",
     );
   const metadata =
     command.type === "restore" ? original : validMetadata(command.metadata);
   if (!metadata)
     return commandRefusal(
       "invalid",
-      "Enter a title and summary, with up to 12 tags of 40 characters each.",
+      `Enter a title and summary, with up to ${SOURCE_METADATA_LIMITS.tags} tags of ${SOURCE_METADATA_LIMITS.tag} characters each.`,
+      "INVALID_INPUT", { field: "metadata" },
     );
   if (sameMetadata(entry.record, metadata))
     return { ok: true, next: state, changed: false };

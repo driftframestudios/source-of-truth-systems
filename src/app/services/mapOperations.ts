@@ -1,6 +1,6 @@
 import type { GraphNode } from "../types";
 import type { CommandRefusal, CommandResult, WorkflowCheck } from "./command";
-import { commandRefusal } from "./command";
+import { commandRefusal, identifyRefusal } from "./command";
 import {
   orderTransitions,
   reviewTransitions,
@@ -99,7 +99,7 @@ export function createMapCommands(owner: {
       subjectId: node.id,
       dataClass: node.dataClass,
     });
-    if (!access.ok) return access;
+    if (!access.ok) return identifyRefusal(access);
     const action = mapActions(node).find(
       (option) =>
         option.command.type === command.type &&

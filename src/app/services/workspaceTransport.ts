@@ -54,6 +54,7 @@ export interface WorkspaceEvent {
 }
 export interface WorkspaceResponse {
   readonly code: WorkspaceCode;
+  readonly diagnostic?: "TRANSPORT_UNCONFIRMED" | "RESPONSE_INVALID";
   readonly message: string;
   readonly workspace?: VisitorWorkspace | null;
   readonly source?: WorkspaceSource | null;
@@ -77,6 +78,7 @@ export const requestWorkspace: WorkspaceRequest = async (
     return { code: "LOCAL", message: "Changes stay in this browser session." };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
+  let diagnostic: "TRANSPORT_UNCONFIRMED" | "RESPONSE_INVALID" = "TRANSPORT_UNCONFIRMED";
   try {
     const response = await fetch("/workspace/graphql", {
       method: "POST",
@@ -94,8 +96,9 @@ export const requestWorkspace: WorkspaceRequest = async (
         variables,
       }),
     });
-    const body = await response.json();
     if (!response.ok) throw new Error("Workspace request unavailable.");
+    diagnostic = "RESPONSE_INVALID";
+    const body = await response.json();
     const value = decodeWorkspaceResponse(operation, body, variables);
     if (!value) throw new Error("Workspace response unavailable.");
     return value;
@@ -103,6 +106,7 @@ export const requestWorkspace: WorkspaceRequest = async (
     // A timed-out mutation may already be accepted; its caller retains the same command identity for retry.
     return {
       code: "UNAVAILABLE",
+      diagnostic,
       message:
         "The workspace could not confirm this request. Keep your draft and retry.",
     };

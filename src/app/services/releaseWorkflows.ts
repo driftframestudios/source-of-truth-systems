@@ -1,6 +1,6 @@
 import type { ArcId, Decision, Instruction } from '../types';
 import type { CommandPermission, CommandResult } from './command';
-import { commandRefusal } from './command';
+import { commandRefusal, identifyRefusal } from './command';
 import type { PermissionDecision } from './permissionPolicy';
 
 export const RELEASE_OPTIONS: ReadonlyArray<{ value: ArcId; label: string }> = [
@@ -54,8 +54,8 @@ export function createReleaseCommands(owner: {
     const record = requirement ? own(state.requirements, command.id) : own(state.decisions, command.id);
     if (!record) return commandRefusal('missing', 'This release record is unavailable.');
     const access = owner.checkPermission({ action: 'release.manage', subjectId: record.id });
-    if (!access.ok) return access;
-    if (record.revision !== command.revision) return commandRefusal('transition', 'This record changed. Review its current state before applying this action.');
+    if (!access.ok) return identifyRefusal(access);
+    if (record.revision !== command.revision) return commandRefusal('transition', 'This record changed. Review its current state before applying this action.', 'STALE_REVISION');
     const revision = record.revision + 1;
     const unavailable = () => commandRefusal('transition', 'Choose an action available for this record’s current state.');
     switch (command.type) {

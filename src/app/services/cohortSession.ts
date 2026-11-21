@@ -1,8 +1,8 @@
 import type { CommandPermission, CommandRefusal } from "./command";
-import { commandRefusal } from "./command";
+import { commandRefusal, identifyRefusal } from "./command";
 import type { PermissionDecision } from "./permissionPolicy";
 import type { FacetOptions, RuleDefinition } from "./cohortRules";
-import { parseRuleDefinition } from "./cohortRules";
+import { inspectRuleDefinition, COHORT_LIMITS } from "./cohortRules";
 
 export interface SavedCohortRule extends RuleDefinition {
   readonly id: string;
@@ -51,7 +51,7 @@ export function createCohortCommands(owner: {
         action: "workspace.edit",
         subjectId: entry?.id ?? "cohort-rules",
       });
-      if (!permission.ok) return permission;
+      if (!permission.ok) return identifyRefusal(permission);
       if (
         command.type !== "create" &&
         (!Number.isSafeInteger(command.revision) ||
@@ -60,6 +60,7 @@ export function createCohortCommands(owner: {
         return commandRefusal(
           "transition",
           "This rule changed. Reopen its saved version, or save a copy of your draft.",
+          "STALE_REVISION",
         );
       if (command.type === "remove") {
         owner.commit({
@@ -67,11 +68,21 @@ export function createCohortCommands(owner: {
         });
         return { ok: true, id: entry!.id, revision: entry!.revision };
       }
-      const definition = parseRuleDefinition(command.definition, owner.options);
+      const { definition, finding } = inspectRuleDefinition(
+        command.definition,
+        owner.options,
+      );
       if (!definition)
         return commandRefusal(
           "invalid",
-          "Enter a rule name and use valid facet values in labeled groups (up to 128 cards and 8 nested levels).",
+          `Enter a rule name and use valid facet values in labeled groups (up to ${COHORT_LIMITS.nodes} cards and ${COHORT_LIMITS.depth} nested levels).`,
+          "INVALID_INPUT",
+          {
+            field: "definition",
+            finding: finding?.code,
+            nodeId: finding?.nodeId,
+            path: finding?.path,
+          },
         );
       const accepted: SavedCohortRule = {
         ...definition,

@@ -31,6 +31,7 @@ const { WORKSPACE_OPERATIONS } = await import(transport);
 const { createSourceWorkspace } = await import(
   await moduleUrl("../src/app/services/sourceWorkspace.ts", {
     "./sourceSession": source,
+    "./command": command,
     "./browserSession": browser,
     "./workspaceTransport": transport,
   })
@@ -446,6 +447,7 @@ test('fetch receiver admits only the expected operation and owned bounded record
     const result = await requestWorkspace('WorkspaceHistory', variables, scenario);
     assert.equal(result.code, 'UNAVAILABLE');
     assert.equal(result.events, undefined);
+    assert.equal(result.diagnostic, 'RESPONSE_INVALID');
     assert.doesNotMatch(result.message, /private server detail/);
   }
   for (const patch of [{ source: { ...entry(1), id: 'other' } }, { source: { ...entry(1), revision: 1.5 } }, { source: { ...entry(1), tags: ['x'.repeat(41)] } }, { source: null }, { changed: 'true' }, { source: entry(999), changed: false }, { source: entry(0), changed: true }]) {
@@ -476,6 +478,7 @@ test('lost fetch save acknowledgement retries the same command and accepts one e
   await owner.initialize(scenario);
   const first = await owner.execute(edit(), context);
   assert.equal(first.ok, false);
+  assert.equal(first.code, 'TRANSPORT_UNCONFIRMED');
   assert.equal(owner.state.getSnapshot().byId.source.revision, 0);
   const second = await owner.execute(edit(), context);
   assert.equal(second.ok, true);
@@ -498,4 +501,28 @@ test('a foreign workspace receipt preserves current metadata and keeps history o
   const history = await owner.history('source', scenario);
   assert.equal(history.code, 'UNAVAILABLE');
   assert.equal(history.events, undefined);
+});
+
+
+const { workspaceRefusal, commandRefusal, failureCode } = await import(command);
+test('wire and command refusals retain distinct recovery identities without message parsing', () => {
+  const expected = { CONFLICT: 'STALE_REVISION', DENIED: 'PERMISSION_DENIED', INVALID: 'INVALID_INPUT', MISSING: 'MISSING_RECORD', EXPIRED: 'WORKSPACE_EXPIRED', ABSENT: 'WORKSPACE_ABSENT', QUOTA: 'WORKSPACE_QUOTA', UNAVAILABLE: 'TRANSPORT_UNCONFIRMED' };
+  for (const [code, identity] of Object.entries(expected)) {
+    const refusal = workspaceRefusal({ code, message: 'Surface-owned wording.' });
+    assert.equal(refusal.code, identity);
+    assert.equal(refusal.reason, 'Surface-owned wording.');
+  }
+  assert.equal(commandRefusal('transition', 'Workflow action moved.').code, 'INVALID_TRANSITION');
+  assert.equal(failureCode({ ok: false, kind: 'consent', reason: 'Current consent governs.' }), 'PERMISSION_DENIED');
+});
+
+const { createError } = await import(await moduleUrl('../src/app/services/errorFactory.ts'));
+test('example recovery points to existing controls and unknown failures mask supplied details', () => {
+  const example = createError('CONNECTION_AUTH_EXPIRED', 'Example notice');
+  assert.match(example.suggestedAction, /Profile → Connections/);
+  assert.doesNotMatch(example.suggestedAction, /Re-authenticate/);
+  const unknown = createError('constructor', 'private internal details');
+  assert.equal(unknown.code, 'INTERNAL_UNEXPECTED');
+  assert.doesNotMatch(unknown.message, /private internal details/);
+  assert.ok(unknown.id);
 });

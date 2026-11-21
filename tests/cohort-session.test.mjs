@@ -402,3 +402,21 @@ test('fused counts preserve nested negation, consent holds and current record an
   assert.equal(before.matched.length, 0);
   assert.equal(after.matched.length, 1);
 });
+
+
+test('cohort refusals expose stable identity and bounded editor findings', () => {
+  const f = fixture();
+  const accepted = f.commands.execute({ type: 'create', definition: rule() });
+  const before = f.state();
+  const stale = f.commands.execute({ type: 'update', id: accepted.id, revision: 7, definition: rule() });
+  assert.equal(stale.code, 'STALE_REVISION');
+  const invalid = f.commands.execute({ type: 'create', definition: rule([pred('priority', 'wrong')]) });
+  assert.equal(invalid.code, 'INVALID_INPUT');
+  assert.deepEqual(invalid.details.path, [0]);
+  assert.equal(invalid.details.nodeId, 'priority-wrong');
+  assert.equal(invalid.details.finding, 'facet-value');
+  assert.match(invalid.reason, /128 cards and 8 nested levels/);
+  assert.equal(f.state(), before);
+  f.policy({ role: 'viewer' });
+  assert.equal(f.commands.execute({ type: 'create', definition: rule() }).code, 'PERMISSION_DENIED');
+});
