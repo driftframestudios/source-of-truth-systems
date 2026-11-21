@@ -159,6 +159,7 @@ test('removing an ancestor reconciles focus before the next palette action', asy
   await page.getByTitle('Add Order workflow on_hold to the focused group',{exact:true}).click();
   await expect(page.getByText('2 predicates',{exact:true})).toBeVisible();
   await expect(root.getByRole('combobox').last()).toHaveValue('on_hold');
+  await expect(page.locator('.plate-loading')).toHaveCount(0);
   await page.screenshot({path:'.visual-runs/cohort-focus-desktop.png'});
   await page.setViewportSize({width:1024,height:768});
   await expect(root).toBeVisible();
