@@ -138,3 +138,58 @@ test("denied saves preserve the open rule and consent-held matches remain inelig
   await openBuilder(page);
   await expect(savedRule(page, "Retained draft")).toHaveCount(0);
 });
+
+
+test('removing an ancestor reconciles focus before the next palette action', async ({page}) => {
+  await page.goto('/');
+  await openBuilder(page);
+  const root = page.locator('[data-cohort-group="root"]');
+  const seedGroup = root.locator('[data-cohort-group]').first();
+  await seedGroup.getByRole('checkbox', {name:'Select group for linking',exact:true}).check();
+  await root.getByRole('checkbox', {name:'Select Consent card for linking',exact:true}).last().check();
+  await page.getByRole('button',{name:'Link AND',exact:true}).click();
+  const outer = root.locator('[data-cohort-group]').first();
+  const inner = outer.locator('[data-cohort-group]').first();
+  await inner.getByRole('textbox',{name:'Group label',exact:true}).click();
+  await expect(inner).toHaveAttribute('data-focused','true');
+  await inner.getByRole('checkbox',{name:'Select group for linking',exact:true}).check();
+  await outer.getByTitle('Remove group',{exact:true}).first().click();
+  await expect(root).toHaveAttribute('data-focused','true');
+  await expect(page.getByText('0 selected',{exact:true})).toBeVisible();
+  await page.getByTitle('Add Order workflow on_hold to the focused group',{exact:true}).click();
+  await expect(page.getByText('2 predicates',{exact:true})).toBeVisible();
+  await expect(root.getByRole('combobox').last()).toHaveValue('on_hold');
+  await expect(page.locator('.plate-loading')).toHaveCount(0);
+  await page.screenshot({path:'.visual-runs/cohort-focus-desktop.png'});
+  await page.setViewportSize({width:1024,height:768});
+  await expect(root).toBeVisible();
+  await page.screenshot({path:'.visual-runs/cohort-focus-compact.png'});
+});
+
+
+test('clear restores AND and an unnegated root before adding new cards', async ({page}) => {
+  await page.goto('/');
+  await openBuilder(page);
+  await page.getByRole('button',{name:'Governance holds',exact:true}).click();
+  const root = page.locator('[data-cohort-group="root"]');
+  await root.getByTitle('Toggle NOT',{exact:true}).first().click();
+  await page.getByRole('button',{name:'Clear canvas',exact:true}).click();
+  await expect(page.getByLabel('Current cohort counts')).toContainText('10 matched');
+  await page.getByTitle('Add Order workflow on_hold to the focused group',{exact:true}).click();
+  await page.getByTitle('Add Order workflow in_progress to the focused group',{exact:true}).click();
+  await expect(page.getByLabel('Current cohort counts')).toContainText('0 matched');
+});
+
+
+test('each rejected cross-group link attempt returns feedback', async ({page}) => {
+  await page.goto('/');
+  await openBuilder(page);
+  const root = page.locator('[data-cohort-group="root"]');
+  await root.getByRole('checkbox',{name:'Select group for linking',exact:true}).check();
+  await root.getByRole('checkbox',{name:'Select Actionability tier card for linking',exact:true}).check();
+  const link = page.getByRole('button',{name:'Link AND',exact:true});
+  await link.click();
+  await expect(page.getByText('Choose cards in one group',{exact:true})).toHaveCount(1);
+  await link.click();
+  await expect(page.getByText('Choose cards in one group',{exact:true})).toHaveCount(2);
+});

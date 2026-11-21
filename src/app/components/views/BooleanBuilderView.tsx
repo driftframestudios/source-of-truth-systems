@@ -1,6 +1,6 @@
 import './cohort-builder.css';
 import type { LucideIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import {
   Dna, FlaskConical, Gauge, ShieldAlert, Target, MapPin, Layers, Activity, Database,
   Link2, Unlink, Plus, X, Ban, Save, Lock, GitMerge, Braces, CircleDot, Filter,
@@ -16,8 +16,9 @@ import { meetsSpecimenTarget, specimenTargetLabel } from '../../services/specime
 import type { Specimen, Biomarker } from '../../types';
 import { useSpecimens, useBiomarkers } from '../../services/recordSessionContext';
 import { useCohortSession } from '../../services/cohortSessionContext';
-import { COHORT_LIMITS, cohortFacetOptions, createCohortProjection, withinCohortDraftLimits } from '../../services/cohortRules';
+import { COHORT_LIMITS, cohortFacetOptions, createCohortProjection } from '../../services/cohortRules';
 import type { Facet, Joiner, PredicateNode, GroupNode, RuleNode } from '../../services/cohortRules';
+import { cohortEditorReducer, createCohortEditor } from '../../services/cohortEditor';
 import type { SavedCohortRule } from '../../services/cohortSession';
 
 // ============================================================
@@ -76,56 +77,6 @@ function toExpression(node: RuleNode, depth = 0): string {
       : node.children.map((c) => toExpression(c, depth + 1)).join(` ${node.joiner} `);
   const wrapped = node.kind === 'group' && depth > 0 && node.children.length > 1 ? `(${inner})` : inner;
   return node.negated ? `NOT ${node.kind === 'group' && node.children.length > 1 && depth === 0 ? `(${wrapped})` : wrapped}` : wrapped;
-}
-
-// Immutable tree helpers ------------------------------------------------------
-
-function mapNode(root: GroupNode, id: string, fn: (n: RuleNode) => RuleNode): GroupNode {
-  const walk = (n: RuleNode): RuleNode => {
-    if (n.id === id) return fn(n);
-    if (n.kind === 'group') return { ...n, children: n.children.map(walk) };
-    return n;
-  };
-  return walk(root) as GroupNode;
-}
-
-function removeNode(root: GroupNode, id: string): GroupNode {
-  const walk = (g: GroupNode): GroupNode => ({
-    ...g,
-    children: g.children.filter((c) => c.id !== id).map((c) => (c.kind === 'group' ? walk(c) : c)),
-  });
-  return walk(root);
-}
-
-function findParent(root: GroupNode, id: string): GroupNode | null {
-  for (const c of root.children) {
-    if (c.id === id) return root;
-    if (c.kind === 'group') {
-      const p = findParent(c, id);
-      if (p) return p;
-    }
-  }
-  return null;
-}
-
-/** Links selected siblings (same parent) into a new nested group, preserving position. */
-function linkNodes(root: GroupNode, ids: ReadonlyArray<string>, joiner: Joiner, label: string): GroupNode | null {
-  const parent = findParent(root, ids[0]);
-  if (!parent || ids.some((i) => findParent(root, i)?.id !== parent.id)) return null;
-  const picked = parent.children.filter((c) => ids.includes(c.id));
-  const firstIdx = parent.children.findIndex((c) => ids.includes(c.id));
-  const group: GroupNode = { kind: 'group', id: nid('g'), joiner, negated: false, label, children: picked };
-  const rest = parent.children.filter((c) => !ids.includes(c.id));
-  const next = [...rest.slice(0, firstIdx), group, ...rest.slice(firstIdx)];
-  return mapNode(root, parent.id, (n) => ({ ...(n as GroupNode), children: next }));
-}
-
-/** Dissolves a group, splicing its children into the parent. */
-function unlinkGroup(root: GroupNode, id: string): GroupNode {
-  const parent = findParent(root, id);
-  if (!parent) return root;
-  const next = parent.children.flatMap((c) => (c.id === id && c.kind === 'group' ? c.children : [c]));
-  return mapNode(root, parent.id, (n) => ({ ...(n as GroupNode), children: next }));
 }
 
 function countPredicates(n: RuleNode): number {
@@ -206,6 +157,7 @@ function PaletteCard({ facet, onAdd, count }: { facet: FacetDef; onAdd: (f: Face
 // ============================================================
 
 interface CanvasCtx {
+  readonly rootId: string;
   readonly selected: ReadonlySet<string>;
   readonly focusId: string;
   readonly specimenCount: number;
@@ -297,9 +249,11 @@ function GroupCard({ node, ctx, depth }: { node: GroupNode; ctx: CanvasCtx; dept
   const focused = ctx.focusId === node.id;
   const sel = ctx.selected.has(node.id);
   const accent = node.joiner === 'AND' ? '#2dd4bf' : '#f59e0b';
-  const isRoot = node.id === 'root';
+  const isRoot = node.id === ctx.rootId;
   return (
     <div
+      data-cohort-group={node.id}
+      data-focused={focused}
       onClick={(e) => { e.stopPropagation(); ctx.setFocus(node.id); }}
       onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setOver(true); }}
       onDragLeave={() => setOver(false)}
@@ -486,25 +440,21 @@ export function BooleanBuilderView() {
   const access = writeGate.check({ action: 'workspace.edit', subjectId: 'cohort-rules' });
   const canEdit = access.ok;
 
-  const [root, acceptRoot] = useState<GroupNode>(SEED);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const [focusId, setFocusId] = useState('root');
+  const [editor, dispatch] = useReducer(cohortEditorReducer, SEED, createCohortEditor);
+  const { root, selected, focusId } = editor;
   const [supportPane, setSupportPane] = useState<'facets' | 'rule'>('facets');
   const [family, setFamily] = useState<FacetDef['family'] | 'All'>('All');
   const [ruleName, setRuleName] = useState('Tumor-board ready · actionable');
   const { state: { rules: saved }, commands } = useCohortSession();
   const [loaded, setLoaded] = useState<{ id: string; revision: number } | null>(null);
   const [notice, setNotice] = useState('');
-  const setRoot = (candidate: GroupNode | ((current: GroupNode) => GroupNode)) => {
-    const next = typeof candidate === 'function' ? candidate(root) : candidate;
-    if (!withinCohortDraftLimits(next)) {
-      setNotice(`Keep this rule within ${COHORT_LIMITS.nodes} cards and ${COHORT_LIMITS.depth} nested levels. Remove a card or unlink a group to continue.`);
-      return false;
+  useEffect(() => {
+    if (editor.issue === 'siblings') {
+      pushToast({ severity: 'warning', title: 'Choose cards in one group', message: 'Choose cards under the same parent group, or unlink a nested group first.' });
+      dispatch({ type: 'clearIssue' });
     }
-    acceptRoot(next);
-    setNotice('');
-    return true;
-  };
+  }, [editor.issue, pushToast]);
+  const edit = (action: Parameters<typeof cohortEditorReducer>[1]) => { dispatch(action); setNotice(''); };
   const specimens = useSpecimens();
   const biomarkers = useBiomarkers();
   const projection = useMemo(() => createCohortProjection(specimens, biomarkers), [specimens, biomarkers]);
@@ -513,47 +463,26 @@ export function BooleanBuilderView() {
   const expr = useMemo(() => toExpression(root), [root]);
 
   const ctx: CanvasCtx = {
-    selected,
-    focusId,
+    rootId: root.id, selected, focusId,
     matchCount: projection.count,
     specimenCount: specimens.length,
-    toggleSelect: (id) => setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    }),
-    setFocus: setFocusId,
-    update: (id, fn) => setRoot((r) => mapNode(r, id, fn)),
-    remove: (id) => {
-      setRoot((r) => removeNode(r, id));
-      setSelected((p) => { const n = new Set(p); n.delete(id); return n; });
-      if (focusId === id) setFocusId('root');
-    },
-    unlink: (id) => { setRoot((r) => unlinkGroup(r, id)); if (focusId === id) setFocusId('root'); },
-    drop: (gid, f, v) => {
+    toggleSelect: (id) => dispatch({ type: 'select', id }),
+    setFocus: (id) => dispatch({ type: 'focus', id }),
+    update: (id, update) => edit({ type: 'update', id, update }),
+    remove: (id) => edit({ type: 'remove', id }),
+    unlink: (id) => edit({ type: 'unlink', id }),
+    drop: (id, f, v) => {
       if (!Object.prototype.hasOwnProperty.call(OPTIONS, f) || !OPTIONS[f].includes(v)) return;
-      setRoot((r) => mapNode(r, gid, (n) => n.kind === 'group' ? { ...n, children: [...n.children, pred(f, v)] } : n));
+      edit({ type: 'add', id, node: pred(f, v) });
     },
   };
-
   const addToFocus = (f: Facet, v: string) => ctx.drop(focusId, f, v);
-
-  const link = (joiner: Joiner) => {
-    const ids = Array.from(selected);
-    if (ids.length < 2) return;
-    const next = linkNodes(root, ids, joiner, joiner === 'AND' ? 'Linked · all of' : 'Linked · any of');
-    if (!next) {
-      pushToast({ severity: 'warning', title: 'Choose cards in one group', message: 'Choose cards under the same parent group, or unlink a nested group first.' });
-      return;
-    }
-    if (setRoot(next)) setSelected(new Set());
-  };
-
+  const link = (joiner: Joiner) => edit({ type: 'link', id: nid('g'), joiner, label: joiner === 'AND' ? 'Linked · all of' : 'Linked · any of' });
   const openRule = (rule: SavedCohortRule) => {
-    setRoot(rule.root); setRuleName(rule.name); setLoaded({ id: rule.id, revision: rule.revision });
-    setSelected(new Set()); setFocusId(rule.root.id); setNotice('');
+    edit({ type: 'open', root: rule.root }); setRuleName(rule.name); setLoaded({ id: rule.id, revision: rule.revision });
   };
   const saveRule = (copy = false) => {
+    dispatch({ type: 'clearIssue' });
     const definition = { name: ruleName, root };
     const result = commands.execute(loaded && !copy
       ? { type: 'update', ...loaded, definition }
@@ -617,12 +546,12 @@ export function BooleanBuilderView() {
             className="bg-transparent text-[12px] text-[var(--sot-shell-text)] focus:outline-none w-56" aria-label="Rule name" />
           <div className="flex flex-wrap items-center gap-1 ml-2">
             {PRESETS.map((p) => (
-              <button key={p.id} onClick={() => { setRoot(p.build()); setSelected(new Set()); setFocusId('root'); setRuleName(p.label); setLoaded(null); setNotice(''); }}
+              <button key={p.id} onClick={() => { edit({ type: 'open', root: p.build() }); setRuleName(p.label); setLoaded(null); setNotice(''); }}
                 className="text-[8px] font-mono px-1.5 py-0.5 rounded border border-[var(--sot-shell-strong-border)]/[0.08] text-[var(--sot-shell-muted)] hover:text-[var(--sot-shell-text)] hover:border-[var(--sot-shell-strong-border)]/[0.18]">
                 {p.label}
               </button>
             ))}
-            <button onClick={() => { setRoot({ ...SEED, children: [] }); setSelected(new Set()); setFocusId('root'); }}
+            <button onClick={() => { edit({ type: 'open', root: { ...SEED, id: root.id, children: [] } }); }}
               className="p-1 text-[var(--sot-shell-muted)] hover:text-[var(--sot-shell-text)]" title="Clear canvas"><RotateCcw size={10} /></button>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-1.5">
@@ -650,10 +579,10 @@ export function BooleanBuilderView() {
           </div>
         </div>
         <div className="cohort-builder__summary" aria-label="Current cohort counts"><span>{matches.length} matched</span><span>{eligible.length} eligible</span><span>{held.length} consent-held</span></div>
-        <div role="status" aria-label="Cohort rule result" className="px-4 text-[10px] text-[var(--sot-shell-secondary)]">{notice}</div>
+        <div role="status" aria-label="Cohort rule result" className="px-4 text-[10px] text-[var(--sot-shell-secondary)]">{editor.issue === 'limit' ? `Keep this rule within ${COHORT_LIMITS.nodes} cards and ${COHORT_LIMITS.depth} nested levels. Remove a card or unlink a group to continue.` : notice}</div>
 
         <ScrollArea className="flex-1 min-h-0">
-          <div className="p-4" onClick={() => setFocusId('root')}>
+          <div className="p-4" onClick={() => ctx.setFocus(root.id)}>
             <GroupCard node={root} ctx={ctx} depth={0} />
 
             {/* Result masonry */}
