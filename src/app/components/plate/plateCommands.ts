@@ -7,7 +7,12 @@ import { isPlateTarget } from '../../services/plateHistory/records';
 import { athenaPosture, isResultHeld, resolveArtifact, type RestoreOption } from '../../services/dataAvailability';
 import { applyResultRestores, ATHENA_REPAIR_DELAY_MS, overlayValue, type PlateOverlayAction, type PlateOverlayState } from './plateOverlayState';
 
+export type PlateExampleCommand =
+  | { readonly type: 'artifact.complete' | 'artifact.replay'; readonly target: PlateTarget; readonly artifactKind: ArtifactKind; readonly generation: number }
+  | { readonly type: 'query.complete' | 'query.replay'; readonly target: PlateTarget; readonly generation: number };
+
 export type PlateCommand =
+  | PlateExampleCommand
   | { readonly type: 'artifact.restore'; readonly target: PlateTarget; readonly artifactKind: ArtifactKind; readonly tier: RestoreTier }
   | { readonly type: 'query.repair' | 'query.rebuild'; readonly target: PlateTarget }
   | { readonly type: 'artifact.copyUri'; readonly target: PlateTarget; readonly artifactKind: ArtifactKind };
@@ -19,6 +24,7 @@ export const ARTIFACT_RESOURCE: Readonly<Record<ArtifactKind, ResourceId>> = {
 
 type Refusal = Extract<CommandResult, { ok: false }>;
 type PreparedCommand =
+  | { readonly type: 'example.advance'; readonly result: WellResult; readonly action: PlateOverlayAction }
   | { readonly type: 'artifact.restore'; readonly result: WellResult; readonly artifact: ResultArtifact; readonly option: RestoreOption }
   | { readonly type: 'query.repair' | 'query.rebuild'; readonly result: WellResult }
   | { readonly type: 'artifact.copyUri'; readonly result: WellResult; readonly uri: string };
@@ -47,6 +53,10 @@ function isPlateCommand(value: unknown): value is PlateCommand {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const command = value as Record<string, unknown>;
   if (!isPlateTarget(command.target)) return false;
+  if (command.type === 'query.complete' || command.type === 'query.replay' || command.type === 'artifact.complete' || command.type === 'artifact.replay') {
+    if (!Number.isSafeInteger(command.generation) || (command.generation as number) < 1) return false;
+    return command.type.startsWith('query.') || (typeof command.artifactKind === 'string' && Object.prototype.hasOwnProperty.call(ARTIFACT_RESOURCE, command.artifactKind));
+  }
   if (command.type === 'query.repair' || command.type === 'query.rebuild') return true;
   if (command.type !== 'artifact.restore' && command.type !== 'artifact.copyUri') return false;
   if (typeof command.artifactKind !== 'string' || !Object.prototype.hasOwnProperty.call(ARTIFACT_RESOURCE, command.artifactKind)) return false;
@@ -54,7 +64,7 @@ function isPlateCommand(value: unknown): value is PlateCommand {
 }
 
 /** Preview and execution resolve the same current source; a preview never grants later authority. */
-function prepare(command: PlateCommand, source: PlateCommandSource): PreparedCommand | Refusal {
+function prepare(command: PlateCommand, source: PlateCommandSource, now: string): PreparedCommand | Refusal {
   if (!isPlateCommand(command)) {
     return { ok: false, kind: 'invalid', reason: 'Choose a supported Plate action.' };
   }
@@ -66,6 +76,30 @@ function prepare(command: PlateCommand, source: PlateCommandSource): PreparedCom
   const result = applyResultRestores({ ...canonical, consent: owner.consent ?? canonical.consent }, state.restores);
   const subjectId = result.specimenId ?? result.id;
   if (isResultHeld(result)) return { ok: false, kind: 'consent', reason: 'This result is withheld while its consent or review hold is active.' };
+
+  if (command.type === 'artifact.complete' || command.type === 'artifact.replay' || command.type === 'query.complete' || command.type === 'query.replay') {
+    const complete = command.type === 'artifact.complete' || command.type === 'query.complete';
+    let action: PlateOverlayAction;
+    let resource: ResourceId;
+    if (command.type === 'artifact.complete' || command.type === 'artifact.replay') {
+      const artifact = result.artifacts.find(item => item.kind === command.artifactKind);
+      if (!artifact) return refuse('missing', 'Select an available file for this example.');
+      const task = overlayValue(state.restores, artifact.key);
+      if (!task || task.generation !== command.generation || (complete && task.state !== 'in_progress')) return refuse('transition', 'Choose the current file example to continue.');
+      action = complete ? { type: 'restore.complete', key: artifact.key, generation: task.generation, now }
+        : { type: 'restore.replay', key: artifact.key, generation: task.generation };
+      resource = ARTIFACT_RESOURCE[artifact.kind];
+    } else {
+      const task = overlayValue(state.athena, result.id);
+      if (!task || task.generation !== command.generation || (complete && task.state !== 'running')) return refuse('transition', 'Choose the current query example to continue.');
+      const posture = athenaPosture(result, task);
+      if (posture.state === 'pending' || posture.state === 'restricted' || posture.state === 'excluded') return refuse('transition', 'Select a released result with query access.');
+      action = { type: complete ? 'athena.complete' : 'athena.replay', resultId: result.id, generation: task.generation };
+      resource = 'vcf_gvcf';
+    }
+    const decision = source.check({ action: 'analysis.run', resource, consent: result.consent, geography: owner.geography, dataClass: owner.dataClass, subjectId });
+    return decision.ok ? { type: 'example.advance', result, action } : decision;
+  }
 
   if (command.type === 'artifact.restore' || command.type === 'artifact.copyUri') {
     const artifact = result.artifacts.find((item) => item.kind === command.artifactKind);
@@ -96,11 +130,11 @@ function prepare(command: PlateCommand, source: PlateCommandSource): PreparedCom
 export function createPlateCommands(source: PlateCommandSource, effects: PlateCommandEffects) {
   return {
     preview(command: PlateCommand): CommandResult {
-      const prepared = prepare(command, source);
+      const prepared = prepare(command, source, effects.now());
       return 'ok' in prepared ? prepared : { ok: true, changed: false };
     },
     async execute(command: PlateCommand): Promise<CommandResult> {
-      const prepared = prepare(command, source);
+      const prepared = prepare(command, source, effects.now());
       if ('ok' in prepared) return prepared;
       if (prepared.type === 'artifact.copyUri') {
         try { await effects.copy(prepared.uri); }
@@ -108,6 +142,7 @@ export function createPlateCommands(source: PlateCommandSource, effects: PlateCo
         effects.copied(prepared.uri);
         return { ok: true, changed: false };
       }
+      if (prepared.type === 'example.advance') return { ok: true, changed: effects.commit(prepared.action) };
       const action: PlateOverlayAction = prepared.type === 'artifact.restore'
         ? { type: 'restore.request', artifact: prepared.artifact, option: prepared.option, now: effects.now() }
         : prepared.type === 'query.repair'

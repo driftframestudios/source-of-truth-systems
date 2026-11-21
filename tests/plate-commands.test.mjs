@@ -223,3 +223,47 @@ test('canonical record classification refuses raw timeline commands before any e
   assert.deepEqual(f.accepted, []);
   assert.equal(f.writes(), 0);
 });
+
+test('file completion and replay recheck current authority and retain shared identity', async () => {
+  const f = fixture();
+  await f.commands.execute(restore);
+  const complete = { type: 'artifact.complete', target, artifactKind: 'bam', generation: 1 };
+  assert.equal(f.commands.preview(complete).ok, true);
+  const pending = f.state();
+  f.scenario({ role: 'viewer' });
+  assert.equal((await f.commands.execute(complete)).kind, 'role');
+  assert.equal(f.state(), pending);
+  f.scenario({ role: 'arc_lead' });
+  f.cache.set(historyKey(plateId, canonical.wellId), { mode: 'STORED', missing: false, results: [{ ...canonical, consent: 'rescinded' }] });
+  assert.equal((await f.commands.execute(complete)).kind, 'consent');
+  f.cache.clear();
+  assert.deepEqual(await f.commands.execute(complete), { ok: true, changed: true });
+  assert.equal(f.state().restores[artifact.key].state, 'restored');
+  assert.equal((await f.commands.execute(complete)).kind, 'transition');
+  assert.equal((await f.commands.execute({ ...complete, type: 'artifact.replay' })).ok, true);
+  assert.equal(f.state().restores[artifact.key], undefined);
+  await f.commands.execute(restore);
+  assert.equal((await f.commands.execute(complete)).kind, 'transition');
+  assert.equal(f.state().restores[artifact.key].state, 'in_progress');
+  assert.equal((await f.commands.execute({ ...complete, generation: -1 })).kind, 'invalid');
+});
+
+test('query rebuild completion changes queryability, respects scope and supports a fresh replay', async () => {
+  const f = fixture();
+  const old = { ...canonical, runDate: '2024-01-01' };
+  f.cache.set(historyKey(plateId, canonical.wellId), { mode: 'STORED', missing: false, results: [old] });
+  const { athenaPosture } = await import(availability);
+  assert.equal((await f.commands.execute({ type: 'query.rebuild', target })).ok, true);
+  // Extra fields do not change the command's discriminated target.
+  const complete = { type: 'query.complete', target, generation: 1, artifactKind: 'bam' };
+  f.cache.set(historyKey(plateId, canonical.wellId), { mode: 'STORED', missing: true, results: [] });
+  assert.equal((await f.commands.execute(complete)).kind, 'missing');
+  f.cache.set(historyKey(plateId, canonical.wellId), { mode: 'STORED', missing: false, results: [old] });
+  assert.equal((await f.commands.execute(complete)).ok, true);
+  assert.equal(athenaPosture(old, f.state().athena[old.id]).state, 'ready');
+  assert.equal((await f.commands.execute({ ...complete, type: 'query.replay' })).ok, true);
+  assert.equal(athenaPosture(old, f.state().athena[old.id]).state, 'rebuild');
+  await f.commands.execute({ type: 'query.rebuild', target });
+  assert.equal((await f.commands.execute(complete)).kind, 'transition');
+  assert.equal(f.state().athena[old.id].state, 'running');
+});

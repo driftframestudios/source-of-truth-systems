@@ -28,6 +28,7 @@ import { PLATE_ID, RESULT_KIND_LABEL } from '../../data/wellResults';
 import { useEnvironment } from '../../services/environment';
 import { usePlateOverlay } from './plateOverlay';
 import { overlayValue } from './plateOverlayState';
+import type { PlateExampleCommand } from './plateCommands';
 import { STATUS_LABEL, legendFor, discBackground } from './stackLens';
 import { usePlateColors } from './usePlateColors';
 import type { StackLens } from './stackLens';
@@ -495,6 +496,7 @@ function ReadyColumn({
               const open = restoreFor === r.artifact.kind;
               const access = overlay.preview({ type: 'artifact.restore', target, artifactKind: r.artifact.kind, tier: r.options[0]?.tier ?? 'standard' });
               const copyAccess = overlay.preview({ type: 'artifact.copyUri', target, artifactKind: r.artifact.kind });
+              const localTask = overlayValue(overlay.restores, r.artifact.key);
               return (
                 <div key={r.artifact.kind}>
                   <div className="grid items-center gap-1.5 text-[10px] py-[3px] px-1 rounded hover:bg-[var(--sot-shell-raised)]" style={{ gridTemplateColumns: '5.2rem 3.8rem 1fr auto' }}>
@@ -529,6 +531,10 @@ function ReadyColumn({
                       )}
                     </span>
                   </div>
+                  {localTask && r.state !== 'held' && <ExampleTaskControls label={`${ARTIFACT_LABEL[r.artifact.kind]} restore`}
+                    running={localTask.state === 'in_progress'}
+                    complete={{ type: 'artifact.complete', target, artifactKind: r.artifact.kind, generation: localTask.generation }}
+                    replay={{ type: 'artifact.replay', target, artifactKind: r.artifact.kind, generation: localTask.generation }} />}
                   <AnimatePresence initial={false}>
                     {open && (
                       <motion.div
@@ -567,6 +573,27 @@ function ReadyColumn({
   );
 }
 
+function ExampleTaskControls({ label, running, complete, replay }: {
+  label: string;
+  running: boolean;
+  complete: PlateExampleCommand;
+  replay: PlateExampleCommand;
+}) {
+  const overlay = usePlateOverlay();
+  return <div className="flex flex-wrap items-center gap-2 py-1 text-[9px] font-mono text-[var(--sot-shell-secondary)]">
+    <span>Local example · this session</span>
+    {(running ? [{ command: complete, text: 'Complete example' }, { command: replay, text: 'Replay' }] : [{ command: replay, text: 'Replay' }]).map(({ command, text }) => {
+      const access = overlay.preview(command);
+      return <button key={text} aria-label={`${text} · ${label}`} aria-disabled={!access.ok}
+        title={access.ok ? (text === 'Replay' ? 'Return this local task to its starting state' : 'Show the completed local result now') : access.reason}
+        onClick={() => void overlay.execute(command)}
+        className="rounded border border-[var(--sot-shell-border)] px-1.5 py-0.5 text-[var(--sot-shell-text)] hover:bg-[var(--sot-shell-raised)] aria-disabled:opacity-50">
+        {text}
+      </button>;
+    })}
+  </div>;
+}
+
 function WhereColumn({
   result, resolved, athena,
 }: {
@@ -584,6 +611,7 @@ function WhereColumn({
   const target = { plateId: PLATE_ID, wellId: result.wellId, resultId: result.id };
   const commandType = athena.action?.kind === 'rebuild' ? 'query.rebuild' : 'query.repair';
   const access = overlay.preview({ type: commandType, target });
+  const localTask = overlayValue(overlay.athena, result.id);
 
   const runFix = () => {
     if (!athena.action) return;
@@ -653,6 +681,10 @@ function WhereColumn({
             <button onClick={() => setShowSql((s) => !s)} className="ml-auto text-[8.5px] font-mono text-[var(--sot-shell-muted)] hover:text-[var(--sot-shell-text)]">{showSql ? 'hide' : 'show'} SQL</button>
           </div>
         )}
+        {localTask && (athena.state === 'ready' || athena.state === 'repair' || athena.state === 'rebuild') && <ExampleTaskControls label="query recovery"
+          running={localTask.state === 'running'}
+          complete={{ type: 'query.complete', target, generation: localTask.generation }}
+          replay={{ type: 'query.replay', target, generation: localTask.generation }} />}
         {showSql && athena.action && (
           <pre className="mt-1.5 text-[9px] leading-snug font-mono text-[var(--sot-shell-text)] bg-black/30 rounded p-1.5 whitespace-pre-wrap">{athena.action.sql}</pre>
         )}
