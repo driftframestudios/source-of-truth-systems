@@ -5,7 +5,7 @@ FROM node:22.23.5-bookworm-slim@sha256:e9f565d32859f0cbfb52125eafe8be39390f24dac
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10.34.3 --activate
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prod=false
 COPY . .
 RUN npm run build && pnpm prune --prod
 
