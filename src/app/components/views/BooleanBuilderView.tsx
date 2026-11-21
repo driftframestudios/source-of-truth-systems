@@ -39,20 +39,20 @@ interface FacetDef {
 const fmt = (s: string) => s.replace(/_/g, ' ');
 const OPTIONS = cohortFacetOptions(STORE.specimens);
 const FACETS: ReadonlyArray<FacetDef> = [
-  { id: 'assay', label: 'Assay', family: 'Specimen', icon: Dna, accent: '#2dd4bf', mode: 'enum', options: OPTIONS.assay },
-  { id: 'priority', label: 'Priority', family: 'Specimen', icon: Activity, accent: '#fb7185', mode: 'enum', options: OPTIONS.priority },
-  { id: 'stage', label: 'Pipeline stage', family: 'Specimen', icon: Layers, accent: '#38bdf8', mode: 'enum', options: OPTIONS.stage },
-  { id: 'orderState', label: 'Order workflow', family: 'Specimen', icon: GitMerge, accent: '#38bdf8', mode: 'enum', options: OPTIONS.orderState },
-  { id: 'tumorPercent', label: 'Tumor content ≥', family: 'Specimen', icon: FlaskConical, accent: '#a78bfa', mode: 'gte', options: OPTIONS.tumorPercent, unit: '%' },
-  { id: 'consent', label: 'Consent', family: 'Governance', icon: ShieldAlert, accent: '#f59e0b', mode: 'enum', options: OPTIONS.consent },
-  { id: 'dataClass', label: 'Data class', family: 'Governance', icon: Database, accent: '#60a5fa', mode: 'enum', options: OPTIONS.dataClass },
-  { id: 'geography', label: 'Geography', family: 'Governance', icon: MapPin, accent: '#94a3b8', mode: 'enum', options: OPTIONS.geography },
-  { id: 'coverageMet', label: 'All metric targets met', family: 'QC', icon: Gauge, accent: '#34d399', mode: 'bool', options: OPTIONS.coverageMet },
-  { id: 'qcFlagged', label: 'Has QC flag', family: 'QC', icon: ShieldCheck, accent: '#f87171', mode: 'bool', options: OPTIONS.qcFlagged },
-  { id: 'variantsCalled', label: 'Variants called ≥', family: 'QC', icon: CircleDot, accent: '#22d3ee', mode: 'gte', options: OPTIONS.variantsCalled },
-  { id: 'biomarkerCategory', label: 'Biomarker class', family: 'Biomarker', icon: Target, accent: '#f59e0b', mode: 'enum', options: OPTIONS.biomarkerCategory },
-  { id: 'biomarkerTier', label: 'Actionability tier', family: 'Biomarker', icon: Sparkles, accent: '#e879f9', mode: 'enum', options: OPTIONS.biomarkerTier },
-  { id: 'biomarkerReview', label: 'Biomarker review', family: 'Biomarker', icon: ShieldCheck, accent: '#e879f9', mode: 'enum', options: OPTIONS.biomarkerReview },
+  { id: 'assay', label: 'Assay', family: 'Specimen', icon: Dna, accent: 'var(--cohort-teal)', mode: 'enum', options: OPTIONS.assay },
+  { id: 'priority', label: 'Priority', family: 'Specimen', icon: Activity, accent: 'var(--cohort-rose)', mode: 'enum', options: OPTIONS.priority },
+  { id: 'stage', label: 'Pipeline stage', family: 'Specimen', icon: Layers, accent: 'var(--cohort-sky)', mode: 'enum', options: OPTIONS.stage },
+  { id: 'orderState', label: 'Order workflow', family: 'Specimen', icon: GitMerge, accent: 'var(--cohort-sky)', mode: 'enum', options: OPTIONS.orderState },
+  { id: 'tumorPercent', label: 'Tumor content ≥', family: 'Specimen', icon: FlaskConical, accent: 'var(--cohort-violet)', mode: 'gte', options: OPTIONS.tumorPercent, unit: '%' },
+  { id: 'consent', label: 'Consent', family: 'Governance', icon: ShieldAlert, accent: 'var(--cohort-amber)', mode: 'enum', options: OPTIONS.consent },
+  { id: 'dataClass', label: 'Data class', family: 'Governance', icon: Database, accent: 'var(--cohort-blue)', mode: 'enum', options: OPTIONS.dataClass },
+  { id: 'geography', label: 'Geography', family: 'Governance', icon: MapPin, accent: 'var(--cohort-slate)', mode: 'enum', options: OPTIONS.geography },
+  { id: 'coverageMet', label: 'All metric targets met', family: 'QC', icon: Gauge, accent: 'var(--cohort-mint)', mode: 'bool', options: OPTIONS.coverageMet },
+  { id: 'qcFlagged', label: 'Has QC flag', family: 'QC', icon: ShieldCheck, accent: 'var(--cohort-red)', mode: 'bool', options: OPTIONS.qcFlagged },
+  { id: 'variantsCalled', label: 'Variants called ≥', family: 'QC', icon: CircleDot, accent: 'var(--cohort-cyan)', mode: 'gte', options: OPTIONS.variantsCalled },
+  { id: 'biomarkerCategory', label: 'Biomarker class', family: 'Biomarker', icon: Target, accent: 'var(--cohort-amber)', mode: 'enum', options: OPTIONS.biomarkerCategory },
+  { id: 'biomarkerTier', label: 'Actionability tier', family: 'Biomarker', icon: Sparkles, accent: 'var(--cohort-pink)', mode: 'enum', options: OPTIONS.biomarkerTier },
+  { id: 'biomarkerReview', label: 'Biomarker review', family: 'Biomarker', icon: ShieldCheck, accent: 'var(--cohort-pink)', mode: 'enum', options: OPTIONS.biomarkerReview },
 ];
 
 const facetById = (id: Facet) => FACETS.find((f) => f.id === id)!;
@@ -176,9 +176,9 @@ function NegateChip({ on, onClick }: { on: boolean; onClick: () => void }) {
       onClick={onClick}
       className="flex items-center gap-0.5 text-[8px] font-mono px-1 py-0.5 rounded border transition-colors"
       style={{
-        borderColor: on ? 'rgba(251,113,133,0.5)' : 'color-mix(in srgb, var(--sot-shell-strong-border) 12%, transparent)',
+        borderColor: on ? 'color-mix(in srgb, var(--cohort-rose) 50%, transparent)' : 'color-mix(in srgb, var(--sot-shell-strong-border) 12%, transparent)',
         color: on ? 'var(--sot-status-danger)' : 'var(--sot-shell-muted)',
-        background: on ? 'rgba(251,113,133,0.08)' : 'transparent',
+        background: on ? 'color-mix(in srgb, var(--cohort-rose) 8%, transparent)' : 'transparent',
       }}
       title="Toggle NOT"
     >
@@ -194,11 +194,8 @@ function PredicateCard({ node, ctx }: { node: PredicateNode; ctx: CanvasCtx }) {
   const n = ctx.matchCount(node);
   return (
     <div
-      className="relative rounded border bg-[var(--sot-shell-surface)] transition-all"
-      style={{
-        borderColor: sel ? '#38bdf8' : node.negated ? 'rgba(251,113,133,0.35)' : 'color-mix(in srgb, var(--sot-shell-strong-border) 10%, transparent)',
-        boxShadow: sel ? '0 0 0 1px #38bdf8, 0 0 18px rgba(56,189,248,0.18)' : 'none',
-      }}
+      className="cohort-predicate relative rounded border bg-[var(--sot-shell-surface)] transition-all"
+      data-selected={sel} data-negated={node.negated}
     >
       <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l" style={{ background: f.accent }} />
       <div className="flex items-center gap-1.5 pl-3 pr-1.5 pt-1.5">
@@ -213,7 +210,7 @@ function PredicateCard({ node, ctx }: { node: PredicateNode; ctx: CanvasCtx }) {
         <span className="text-[8px] font-mono uppercase tracking-wider text-[var(--sot-shell-muted)]">{f.family}</span>
         <div className="ml-auto flex items-center gap-1">
           <NegateChip on={node.negated} onClick={() => ctx.update(node.id, (x) => ({ ...(x as PredicateNode), negated: !x.negated }))} />
-          <button onClick={() => ctx.remove(node.id)} className="p-0.5 text-[var(--sot-shell-muted)] hover:text-[#fb7185]" aria-label="Remove card">
+          <button onClick={() => ctx.remove(node.id)} className="p-0.5 text-[var(--sot-shell-muted)] hover:text-[var(--sot-status-danger)]" aria-label="Remove card">
             <X size={10} />
           </button>
         </div>
@@ -248,7 +245,7 @@ function GroupCard({ node, ctx, depth }: { node: GroupNode; ctx: CanvasCtx; dept
   const [over, setOver] = useState(false);
   const focused = ctx.focusId === node.id;
   const sel = ctx.selected.has(node.id);
-  const accent = node.joiner === 'AND' ? '#2dd4bf' : '#f59e0b';
+  const accent = node.joiner === 'AND' ? 'var(--cohort-teal)' : 'var(--cohort-amber)';
   const isRoot = node.id === ctx.rootId;
   return (
     <div
@@ -262,11 +259,11 @@ function GroupCard({ node, ctx, depth }: { node: GroupNode; ctx: CanvasCtx; dept
         const [f, v] = e.dataTransfer.getData('text/facet').split('|');
         if (f) ctx.drop(node.id, f as Facet, v);
       }}
-      className="rounded-md border transition-all"
+      className="cohort-group rounded-md border transition-all"
+      data-depth-tone={depth % 2 ? 'odd' : 'even'} data-over={over}
       style={{
-        borderColor: over ? '#38bdf8' : sel ? '#38bdf8' : focused ? `color-mix(in srgb, ${accent} 53.333%, transparent)` : `color-mix(in srgb, ${accent} 18.824%, transparent)`,
+        borderColor: over ? 'var(--cohort-sky)' : sel ? 'var(--cohort-sky)' : focused ? `color-mix(in srgb, ${accent} var(--cohort-focus-strength), transparent)` : `color-mix(in srgb, ${accent} var(--cohort-group-strength), transparent)`,
         borderStyle: isRoot ? 'solid' : 'dashed',
-        background: over ? 'rgba(56,189,248,0.05)' : depth % 2 ? 'rgba(255,255,255,0.012)' : 'rgba(9,15,28,0.6)',
       }}
     >
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 border-b" style={{ borderColor: `color-mix(in srgb, ${accent} 13.333%, transparent)` }}>
@@ -304,7 +301,7 @@ function GroupCard({ node, ctx, depth }: { node: GroupNode; ctx: CanvasCtx; dept
             <button onClick={(e) => { e.stopPropagation(); ctx.unlink(node.id); }} className="p-0.5 text-[var(--sot-shell-muted)] hover:text-amber-400" title="Unlink group">
               <Unlink size={10} />
             </button>
-            <button onClick={(e) => { e.stopPropagation(); ctx.remove(node.id); }} className="p-0.5 text-[var(--sot-shell-muted)] hover:text-[#fb7185]" title="Remove group">
+            <button onClick={(e) => { e.stopPropagation(); ctx.remove(node.id); }} className="p-0.5 text-[var(--sot-shell-muted)] hover:text-[var(--sot-status-danger)]" title="Remove group">
               <X size={10} />
             </button>
           </>
@@ -345,7 +342,7 @@ function GroupCard({ node, ctx, depth }: { node: GroupNode; ctx: CanvasCtx; dept
 
 function RuleListing({ node, depth = 0, joiner, index }: { node: RuleNode; depth?: number; joiner?: Joiner; index: number }) {
   const prefix = index > 0 && joiner ? joiner : depth === 0 ? 'WHERE' : '';
-  const prefixColor = prefix === 'AND' ? '#2dd4bf' : prefix === 'OR' ? '#f59e0b' : '#38bdf8';
+  const prefixColor = prefix === 'AND' ? 'var(--cohort-teal)' : prefix === 'OR' ? 'var(--cohort-amber)' : 'var(--cohort-sky)';
   if (node.kind === 'predicate') {
     const f = facetById(node.facet);
     const Icon = f.icon;
@@ -407,20 +404,20 @@ function ResultCard({ s, biomarkers }: { s: Specimen; biomarkers: ReadonlyArray<
         <div className="flex gap-0.5 mt-1.5">
           {s.coverage.map((c) => (
             <div key={c.label} className="flex-1 h-1 rounded-full" title={`${c.label} ${c.value}${c.unit ?? ''} · ${specimenTargetLabel(c)}`}
-              style={{ background: meetsSpecimenTarget(c) ? '#34d399' : '#f59e0b', opacity: 0.8 }} />
+              style={{ background: meetsSpecimenTarget(c) ? 'var(--cohort-mint)' : 'var(--cohort-amber)', opacity: 0.8 }} />
           ))}
         </div>
         {bms.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
             {bms.map((b) => (
-              <span key={b.id} className="text-[8px] font-mono px-1 py-0.5 rounded border border-amber-500/25 text-amber-300/90">
+              <span key={b.id} className="cohort-result-marker text-[8px] font-mono px-1 py-0.5 rounded border border-amber-500/25 text-amber-300/90">
                 {b.name} · {b.actionability.replace('tier_', 'T')}
               </span>
             ))}
           </div>
         )}
         {s.qcFlags.length > 0 && (
-          <div className="text-[8px] font-mono text-rose-300/80 mt-1">⚑ {s.qcFlags.join(' · ')}</div>
+          <div className="cohort-result-flag text-[8px] font-mono text-rose-300/80 mt-1">⚑ {s.qcFlags.join(' · ')}</div>
         )}
       </div>
     </div>
@@ -628,16 +625,16 @@ export function BooleanBuilderView() {
 
             <div>
               <div className="text-[8px] font-mono uppercase tracking-wider text-[var(--sot-shell-muted)] mb-1">Rule expression</div>
-              <pre className="text-[9px] font-mono text-[var(--sot-shell-secondary)] whitespace-pre-wrap break-words rounded border border-[var(--sot-shell-strong-border)]/[0.06] bg-black/30 p-2 leading-relaxed">
+              <pre className="text-[9px] font-mono text-[var(--sot-shell-secondary)] whitespace-pre-wrap break-words rounded border border-[var(--sot-shell-strong-border)]/[0.06] cohort-expression p-2 leading-relaxed">
                 {expr}
               </pre>
             </div>
 
             <div className="grid grid-cols-3 gap-1.5">
               {[
-                { l: 'Matched', v: matches.length, c: '#2dd4bf' },
-                { l: 'Eligible', v: eligible.length, c: '#34d399' },
-                { l: 'Held', v: held.length, c: '#fb7185' },
+                { l: 'Matched', v: matches.length, c: 'var(--cohort-teal)' },
+                { l: 'Eligible', v: eligible.length, c: 'var(--cohort-mint)' },
+                { l: 'Held', v: held.length, c: 'var(--cohort-rose)' },
               ].map((k) => (
                 <div key={k.l} className="rounded border border-[var(--sot-shell-strong-border)]/[0.06] px-2 py-1.5">
                   <div className="text-[14px] font-mono" style={{ color: k.c }}>{k.v}</div>
@@ -646,7 +643,7 @@ export function BooleanBuilderView() {
               ))}
             </div>
 
-            <div className="rounded border border-rose-500/25 bg-rose-500/[0.04] p-2 text-[9px] text-[#c8a0aa] leading-relaxed">
+            <div className="rounded border border-rose-500/25 bg-rose-500/[0.04] p-2 text-[9px] text-[var(--cohort-consent-ink)] leading-relaxed">
               <div className="flex items-center gap-1 text-rose-400 font-mono text-[8px] uppercase mb-0.5"><ShieldAlert size={9} /> Consent boundary</div>
               The Consent Registry holds specimens with rescinded, pending or expired consent (e.g. SPX-2026-0487 · well E3),
               regardless of role. They may match a rule but remain excluded from eligible cohort.

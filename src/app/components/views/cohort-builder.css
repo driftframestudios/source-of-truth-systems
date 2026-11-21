@@ -68,3 +68,63 @@
 .cohort-builder__compiled [data-slot="scroll-area-viewport"] > div {
   display: block !important;
 }
+
+
+/* Cohort paint adapter: facet colors are presentation roles; rule semantics live in services. */
+.cohort-builder {
+  --cohort-teal: #2dd4bf;
+  --cohort-rose: #fb7185;
+  --cohort-sky: #38bdf8;
+  --cohort-violet: #a78bfa;
+  --cohort-amber: #f59e0b;
+  --cohort-blue: #60a5fa;
+  --cohort-slate: #94a3b8;
+  --cohort-mint: #34d399;
+  --cohort-red: #f87171;
+  --cohort-cyan: #22d3ee;
+  --cohort-pink: #e879f9;
+  --cohort-consent-ink: #c8a0aa;
+  --cohort-group-even: rgba(9, 15, 28, .6);
+  --cohort-group-odd: rgba(255, 255, 255, .012);
+  --cohort-expression: rgba(0, 0, 0, .3);
+  --cohort-group-strength: 18.824%;
+  --cohort-focus-strength: 53.333%;
+  --cohort-predicate-border: color-mix(in srgb, var(--sot-shell-strong-border) 10%, transparent);
+}
+.cohort-group { background: var(--cohort-group-even); }
+.cohort-group[data-depth-tone='odd'] { background: var(--cohort-group-odd); }
+.cohort-group[data-over='true'] { background: color-mix(in srgb, var(--cohort-sky) 5%, transparent); }
+.cohort-expression { background: var(--cohort-expression); }
+.cohort-predicate { border-color: var(--cohort-predicate-border); }
+.cohort-predicate[data-negated='true'] { border-color: color-mix(in srgb, var(--cohort-rose) 35%, transparent); }
+.cohort-predicate[data-selected='true'] {
+  border-color: var(--cohort-sky);
+  box-shadow: 0 0 0 1px var(--cohort-sky), 0 0 18px color-mix(in srgb, var(--cohort-sky) 18%, transparent);
+}
+:root:is([data-appearance='light'], [data-appearance='contrast']) .cohort-builder {
+  --cohort-teal: var(--sot-status-success);
+  --cohort-rose: var(--sot-status-danger);
+  --cohort-sky: var(--sot-status-info);
+  --cohort-violet: var(--sot-status-violet);
+  --cohort-amber: var(--sot-status-warning);
+  --cohort-blue: var(--sot-status-info);
+  --cohort-slate: var(--sot-shell-muted);
+  --cohort-mint: var(--sot-status-success);
+  --cohort-red: var(--sot-status-danger);
+  --cohort-cyan: var(--sot-status-info);
+  --cohort-pink: var(--sot-status-violet);
+  --cohort-consent-ink: var(--sot-shell-secondary);
+  --cohort-group-even: var(--sot-shell-inset);
+  --cohort-group-odd: var(--sot-shell-surface);
+  --cohort-expression: var(--sot-shell-inset);
+  --cohort-group-strength: 75%;
+  --cohort-focus-strength: 100%;
+  --cohort-predicate-border: var(--sot-shell-strong-border);
+}
+:root:is([data-appearance='light'], [data-appearance='contrast']) .cohort-builder :is(button, select) {
+  border-color: var(--sot-shell-strong-border);
+}
+
+:root:is([data-appearance='light'], [data-appearance='contrast']) .cohort-result-marker { color: var(--sot-status-warning); }
+:root:is([data-appearance='light'], [data-appearance='contrast']) .cohort-result-flag { color: var(--sot-status-danger); }
+:root[data-appearance='light'] .cohort-builder__tools button[aria-pressed='true'] { background: var(--sot-shell-surface); }
