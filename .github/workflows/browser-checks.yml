@@ -7,9 +7,9 @@ on:
         type: boolean
         default: true
       suite:
-        description: Chromium journey population
+        description: Browser journey population
         type: choice
-        options: [scene-smoke, all]
+        options: [scene-smoke, all, webkit-scenes]
         default: scene-smoke
       include_core:
         description: Also run types, 3D guard and unit/API checks in this job
@@ -43,6 +43,11 @@ jobs:
                 exit 0
               fi
               ;;
+            webkit-scenes)
+              pnpm exec playwright install --with-deps webkit
+              node --input-type=module -e 'import { webkit } from "@playwright/test"; const browser = await webkit.launch(); console.log(`WebKit ${browser.version()} on ${process.platform}/${process.arch}`); await browser.close();' >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+              ;;
             all) ;;
             *) exit 2 ;;
           esac
@@ -60,6 +65,7 @@ jobs:
           SUITE: ${{ inputs.suite }}
         run: |
           case "$SUITE" in
+            webkit-scenes) pnpm test:browser:webkit ;;
             all) pnpm test:browser ;;
             scene-smoke) pnpm test:browser tests/browser/core.spec.mjs tests/browser/responsive-exploration.spec.mjs tests/browser/guided-exploration.spec.mjs ;;
             *) exit 2 ;;
@@ -68,6 +74,7 @@ jobs:
         env:
           SUITE: ${{ inputs.suite }}
           CORE: ${{ inputs.include_core }}
+          REVISION: ${{ github.sha }}
         run: |
-          printf 'Browser population: %s; additional core checks: %s.\n' "$SUITE" "$CORE" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Browser population: %s; additional core checks: %s; revision: %s.\n' "$SUITE" "$CORE" "$REVISION" >> "$GITHUB_STEP_SUMMARY"
           printf '%s\n' 'Selected journeys passed against the production build and synthetic examples.' 'The three hosted-workspace browser cases require their separate disposable database route. Browser traces and screenshots remain runner-local.' >> "$GITHUB_STEP_SUMMARY"

@@ -26,7 +26,8 @@
     "test:security:engine": "node --test tests/security/engine.mjs",
     "build:docs": "node scripts/documentation/build.mjs app",
     "build:foundation": "node scripts/documentation/build.mjs foundation",
-    "test:mysql": "node scripts/prove-database.mjs"
+    "test:mysql": "node scripts/prove-database.mjs",
+    "test:browser:webkit": "playwright test --config playwright.webkit.config.mjs"
   },
   "dependencies": {
     "@graphql-yoga/plugin-persisted-operations": "4.1.0",

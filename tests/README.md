@@ -43,6 +43,19 @@ npm run test:browser -- tests/browser/responsive-exploration.spec.mjs
 
 [playwright.config.mjs](../playwright.config.mjs) owns the production test server and cleanup. It fails on an occupied port instead of reusing an unknown build. Failure captures stay in ignored `.visual-runs/`; examine them locally before sharing a sanitized result. A compatible installed browser may be supplied with `BROWSER_EXECUTABLE`; record its actual version rather than implying it was Playwright's locked revision.
 
+## Optional WebKit scenes
+
+For a focused cross-engine observation, build once and run:
+
+```sh
+pnpm exec playwright install webkit
+npm run test:browser:webkit
+```
+
+[The WebKit configuration](../playwright.webkit.config.mjs) selects existing Corridor controls/presets/Reset, Plate history/record scrolling, mobile history and responsive-return journeys. It shares the ordinary production server, port ownership, one worker and cleanup, while clearing the Chromium-only executable override. Default Chromium discovery remains unchanged. The manual Browser workflow offers `suite=webkit-scenes` and records the selected engine, source revision and result.
+
+Playwright WebKit establishes engine behavior with desktop/touch emulation. A Safari/iOS device check separately establishes actual device input, browser chrome and hardware behavior. The CDP touch-capture probe stays with Chromium. Keep failures and captures local, then route a reproducible product failure to its named owner. [Playwright projects](https://playwright.dev/docs/test-projects) and [browser installation](https://playwright.dev/docs/browsers) describe these engine boundaries.
+
 ## Database and CI selection
 
 The guarded `test:mysql` runner accepts only a local disposable database with the declared test/proof naming pattern, sequences destructive fixture setup and leaves its final installed fixture for optional browser proof. It never supplies evidence for a hosted database. [Automation](../docs/development-automation.md) documents required settings, manual Browser/PostgreSQL clone/MySQL compatibility/Publication scan choices and optional shared setup. A skipped check records a selection; it establishes no behavior result.
