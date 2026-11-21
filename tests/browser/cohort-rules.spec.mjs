@@ -138,3 +138,29 @@ test("denied saves preserve the open rule and consent-held matches remain inelig
   await openBuilder(page);
   await expect(savedRule(page, "Retained draft")).toHaveCount(0);
 });
+
+
+test('removing an ancestor reconciles focus before the next palette action', async ({page}) => {
+  await page.goto('/');
+  await openBuilder(page);
+  const root = page.locator('[data-cohort-group="root"]');
+  const seedGroup = root.locator('[data-cohort-group]').first();
+  await seedGroup.getByRole('checkbox', {name:'Select group for linking',exact:true}).check();
+  await root.getByRole('checkbox', {name:'Select Consent card for linking',exact:true}).last().check();
+  await page.getByRole('button',{name:'Link AND',exact:true}).click();
+  const outer = root.locator('[data-cohort-group]').first();
+  const inner = outer.locator('[data-cohort-group]').first();
+  await inner.getByRole('textbox',{name:'Group label',exact:true}).click();
+  await expect(inner).toHaveAttribute('data-focused','true');
+  await inner.getByRole('checkbox',{name:'Select group for linking',exact:true}).check();
+  await outer.getByTitle('Remove group',{exact:true}).first().click();
+  await expect(root).toHaveAttribute('data-focused','true');
+  await expect(page.getByText('0 selected',{exact:true})).toBeVisible();
+  await page.getByTitle('Add Order workflow on_hold to the focused group',{exact:true}).click();
+  await expect(page.getByText('2 predicates',{exact:true})).toBeVisible();
+  await expect(root.getByRole('combobox').last()).toHaveValue('on_hold');
+  await page.screenshot({path:'.visual-runs/cohort-focus-desktop.png'});
+  await page.setViewportSize({width:1024,height:768});
+  await expect(root).toBeVisible();
+  await page.screenshot({path:'.visual-runs/cohort-focus-compact.png'});
+});
