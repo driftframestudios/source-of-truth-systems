@@ -424,7 +424,7 @@ const { requestWorkspace } = await import(transport);
 const fields = { WorkspaceStatus: 'workspaceStatus', StartWorkspace: 'startWorkspace', ResetWorkspace: 'resetWorkspace', WorkspaceSnapshot: 'workspaceSnapshot', WorkspaceSource: 'workspaceSource', WorkspaceHistory: 'workspaceHistory', SaveSource: 'saveSource', RestoreSource: 'restoreSource' };
 const historyEvent = { id: 'event-1', sourceId: 'source', action: 'save', createdAt: workspace.createdAt, expectedRevision: 0, resultRevision: 1, actor: { principalId: 'prin_self', roleId: 'arc_lead', environment: 'res' } };
 const reply = (operation, fields = {}) => ({ code: 'OK', message: 'Accepted', workspace, ...(['WorkspaceStatus', 'StartWorkspace', 'ResetWorkspace'].includes(operation) ? { available: true } : operation === 'WorkspaceSnapshot' ? { sources: [entry(1)] } : operation === 'WorkspaceHistory' ? { events: [historyEvent] } : { source: entry(1), ...(['SaveSource', 'RestoreSource'].includes(operation) ? { changed: true, replayed: false } : {}) }), ...fields });
-const variables = { id: 'source', sourceId: 'source', input: { id: 'source', idempotencyKey: 'retained-identity' } };
+const variables = { id: 'source', sourceId: 'source', input: { id: 'source', expectedRevision: 0, idempotencyKey: 'retained-identity' } };
 test('fetch receiver admits only the expected operation and owned bounded records', async (t) => {
   let body;
   t.mock.method(globalThis, 'fetch', async () => ({ ok: true, json: async () => body }));
@@ -448,7 +448,7 @@ test('fetch receiver admits only the expected operation and owned bounded record
     assert.equal(result.events, undefined);
     assert.doesNotMatch(result.message, /private server detail/);
   }
-  for (const patch of [{ source: { ...entry(1), id: 'other' } }, { source: { ...entry(1), revision: 1.5 } }, { source: { ...entry(1), tags: ['x'.repeat(41)] } }, { source: null }, { changed: 'true' }]) {
+  for (const patch of [{ source: { ...entry(1), id: 'other' } }, { source: { ...entry(1), revision: 1.5 } }, { source: { ...entry(1), tags: ['x'.repeat(41)] } }, { source: null }, { changed: 'true' }, { source: entry(999), changed: false }, { source: entry(0), changed: true }]) {
     body = { data: { saveSource: reply('SaveSource', patch) } };
     assert.equal((await requestWorkspace('SaveSource', variables, scenario)).code, 'UNAVAILABLE');
   }
@@ -482,4 +482,20 @@ test('lost fetch save acknowledgement retries the same command and accepts one e
   assert.equal(accepted, 1);
   assert.deepEqual(keys, ['same-command', 'same-command']);
   assert.equal(owner.state.getSnapshot().byId.source.record.title, 'Edited');
+});
+
+
+test('a foreign workspace receipt preserves current metadata and keeps history outside the former owner', async () => {
+  const owner = createSourceWorkspace({ baseline, request: async operation => {
+    if (operation === 'WorkspaceSnapshot') return reply(operation, { sources: [entry(0)] });
+    if (operation === 'WorkspaceHistory' || operation === 'SaveSource') return reply(operation, { workspace: { ...workspace, id: 'other' } });
+    return reply(operation);
+  }});
+  await owner.initialize(scenario);
+  const before = owner.state.getSnapshot();
+  assert.equal((await owner.execute(edit(), context)).ok, false);
+  assert.equal(owner.state.getSnapshot(), before);
+  const history = await owner.history('source', scenario);
+  assert.equal(history.code, 'UNAVAILABLE');
+  assert.equal(history.events, undefined);
 });

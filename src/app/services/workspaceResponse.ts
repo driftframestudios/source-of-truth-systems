@@ -214,6 +214,14 @@ export function decodeWorkspaceResponse<O extends WorkspaceOperation>(
       if (operation !== "WorkspaceSource") {
         if (typeof v.changed !== "boolean" || typeof v.replayed !== "boolean")
           return;
+        if (
+          v.code === "OK" &&
+          (!object(variables.input) ||
+            !integer(variables.input.expectedRevision) ||
+            received?.revision !==
+              variables.input.expectedRevision + Number(v.changed))
+        )
+          return;
         payload = { ...payload, changed: v.changed, replayed: v.replayed };
       }
       break;
