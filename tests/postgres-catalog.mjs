@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { execute } from "graphql";
+import { createReadSchema } from "../server/graphql/schema.mjs";
+import { createOperationRegistry } from "../server/graphql/operations.mjs";
+import { deriveScenario } from "../shared/permission-scope.mjs";
 import pg from "pg";
 import { exampleData } from "../build/server/example-data.mjs";
 import { assertPlateCatalog } from "../shared/plate-records.mjs";
@@ -185,6 +189,50 @@ test(
             counted.count > loaded,
             "A new request owns its own relation cache.",
           );
+        },
+      );
+
+      await t.test(
+        "registered history operations retain bounded query work",
+        async () => {
+          const schema = createReadSchema(exampleData);
+          const registry = createOperationRegistry(schema);
+          const parsed = deriveScenario(exampleData.permissionCatalog);
+          assert.equal(parsed.ok, true);
+          for (const name of ["PlateHistory", "WellHistory", "ResultDetails"]) {
+            const counted = countQueries(client);
+            const repository = await createPostgresRepository(counted);
+            const before = counted.count;
+            const descriptor = registry.operations.find(
+              (operation) => operation.name === name,
+            );
+            const result = await execute({
+              schema,
+              document: registry.get(descriptor.sha256Hash),
+              variableValues:
+                name === "ResultDetails"
+                  ? { id: baseline.results.find((r) => r.wellId === "C3").id }
+                  : { plateId: baseline.plateId, id: "C3" },
+              contextValue: {
+                permissionScope: parsed.scope,
+                scopeNamespace: "catalog-proof",
+              request: new Request("http://localhost/graphql"),
+                dataMode: "STORED",
+                plateRepository: () => repository,
+              },
+            });
+            assert.equal(result.errors, undefined);
+            assert.ok(
+              name === "ResultDetails" ? result.data.result : result.data.well,
+            );
+            assert.ok(
+              counted.count - before <= 6,
+              `${name} query work stays bounded`,
+            );
+            t.diagnostic(
+              `${name}: ${counted.count - before} data queries after schema admission.`,
+            );
+          }
         },
       );
 
