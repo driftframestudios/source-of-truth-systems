@@ -528,9 +528,15 @@ test('example recovery points to existing controls and unknown failures mask sup
 });
 
 
-test('a workspace that expires during post-start hydration retains its expiry recovery identity', async () => {
-  const owner = createSourceWorkspace({ baseline, request: async operation => operation === 'StartWorkspace' ? reply(operation) : { code: 'EXPIRED', message: 'Start another workspace to keep this draft.' } });
-  const result = await owner.start(scenario);
-  assert.equal(result.ok, false);
-  assert.equal(result.code, 'WORKSPACE_EXPIRED');
+test('post-start hydration preserves refusal identity through start and subsequent save', async () => {
+  for (const [code, expected] of [['EXPIRED', 'WORKSPACE_EXPIRED'], ['DENIED', 'PERMISSION_DENIED'], ['UNAVAILABLE', 'TRANSPORT_UNCONFIRMED'], ['QUOTA', 'WORKSPACE_QUOTA']]) {
+    const owner = createSourceWorkspace({ baseline, request: async operation => operation === 'StartWorkspace' ? reply(operation) : { code, message: 'Keep this draft and review the current workspace.' } });
+    const result = await owner.start(scenario);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, expected, code);
+    assert.equal((await owner.execute(edit(), context)).code, expected, code);
+    assert.equal(owner.state.getSnapshot().byId.source.revision, 0);
+  }
+  const rejected = createSourceWorkspace({ baseline, request: async () => { throw new Error('private failure'); } });
+  assert.equal((await rejected.execute(edit(), context)).code, 'TRANSPORT_UNCONFIRMED');
 });

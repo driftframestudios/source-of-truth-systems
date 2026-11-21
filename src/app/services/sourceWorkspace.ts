@@ -2,6 +2,7 @@ import type { Source } from "../types";
 import type { ScenarioInput } from "../../../shared/permission-scope.mjs";
 import {
   commandRefusal,
+  failureCode,
   workspaceRefusal,
   type CommandResult,
   type FailureCode,
@@ -33,6 +34,7 @@ export interface SourceWorkspaceStatus {
   readonly message: string;
   readonly busy: boolean;
   readonly generation: number;
+  readonly recoveryCode?: FailureCode;
 }
 interface CommandContext {
   readonly scenario: ScenarioInput;
@@ -48,13 +50,14 @@ const failure = (
 const statusFailure = (status: SourceWorkspaceStatus): CommandResult =>
   failure(
     status.message,
-    status.phase === "expired"
-      ? "WORKSPACE_EXPIRED"
-      : status.phase === "absent"
-        ? "WORKSPACE_ABSENT"
-        : status.phase === "denied"
-          ? "PERMISSION_DENIED"
-          : "OWNER_UNAVAILABLE",
+    status.recoveryCode ??
+      (status.phase === "expired"
+        ? "WORKSPACE_EXPIRED"
+        : status.phase === "absent"
+          ? "WORKSPACE_ABSENT"
+          : status.phase === "denied"
+            ? "PERMISSION_DENIED"
+            : "OWNER_UNAVAILABLE"),
   );
 const normalize = (command: SourceCommand) =>
   command.type === "restore"
@@ -95,7 +98,12 @@ export function createSourceWorkspace({
   let loading: Promise<void> | null = null;
   const pending = new Map<string, string>();
   const update = (patch: Partial<SourceWorkspaceStatus>) =>
-    status.update((current) => ({ ...current, ...patch, generation }));
+    status.update((current) => ({
+      ...current,
+      ...(patch.phase ? { recoveryCode: undefined } : {}),
+      ...patch,
+      generation,
+    }));
   function merge(sources: ReadonlyArray<WorkspaceSource>) {
     state.update((current) => {
       const byId = { ...current.byId };
@@ -147,6 +155,7 @@ export function createSourceWorkspace({
             ? "denied"
             : "unavailable",
       message: response.message,
+      recoveryCode: failureCode(workspaceRefusal(response)),
     });
   }
   async function initialize(
@@ -207,6 +216,7 @@ export function createSourceWorkspace({
             phase: "unavailable",
             message:
               "The source workspace could not load. Keep your draft and retry.",
+            recoveryCode: "TRANSPORT_UNCONFIRMED",
           });
       }
     })();
