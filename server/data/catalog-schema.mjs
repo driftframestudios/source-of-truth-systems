@@ -20,12 +20,4 @@ export const CATALOG_TABLES = Object.freeze([
   "showcase_files",
   "showcase_artifacts",
 ]);
-export const CATALOG_LIMITS = Object.freeze({
-  wells: 96,
-  history: 50,
-  artifacts: 8,
-});
-
-export function catalogError(message, code = "CATALOG_INVALID") {
-  return Object.assign(new Error(message), { code });
-}
+export { CATALOG_LIMITS, catalogError } from './catalog-contract.mjs';

@@ -33,3 +33,11 @@ Maintainers changing the retained MySQL adapter can select `npm run test:mysql` 
 Future result writes, private identities and external assay retrieval need their own authorization, mutation, audit and operational contracts. Current file records describe locations and checksums; they do not upload assay binaries.
 
 [Server](../server/README.md) · [Documentation](README.md)
+
+## Catalog adapter extension boundary
+
+`server/data/catalog-contract.mjs` owns pure limits, maximum-plus-one query probes and record identity admission. Its declaration supplies the `CatalogRepository` port. The example, PostgreSQL and MySQL implementations carry checked JSDoc; the ordinary TypeScript check includes them. `catalog-rows.mjs` reconstructs canonical well/result records, merges file metadata with reference-owned hold/restore fields, and seeds one request's result cache from each joined history read.
+
+SQL columns own record identity, coordinates, sequence, anchor and supersession. JSON supplies validated display metadata. All adapters admit bounded, well-formed identities; NUL and unpaired Unicode surrogates receive the shared identity refusal before SQL. Example records pass the same record parser. PostgreSQL placeholders/schema inspection and MySQL placeholders/schema signatures stay in their adapters; the request scope continues to own transaction, timeout, cancellation and connection cleanup.
+
+Adding an adapter means implementing this small port and exercising empty/missing records, malformed metadata, canonical identity, collection bounds and request-local relation reuse. The shared decoder performs O(H+A) assembly for H result rows and A artifact references. Registered-operation query counts and EXPLAIN observations belong to the explicit engine proof; JavaScript complexity alone establishes neither SQL execution time nor an end-to-end latency improvement.
