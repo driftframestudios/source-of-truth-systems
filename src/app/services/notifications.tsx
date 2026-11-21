@@ -75,17 +75,21 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     [notifications, preferences, setInformationalToasts, resetPreferences, pushToast, pushBanner, pushFromError, dismiss, clearAll],
   );
 
-  return (
-    <NotificationContext.Provider value={value}>
-      {children}
-      {(hasFeedback || feedbackStarted) && <LoadBoundary label="feedback controls" fallback={hasFeedback &&
+  const feedbackFallback = (
+hasFeedback &&
         <section className="notification-fallback" aria-label="Recent feedback">
-          <p>Feedback controls couldn’t load. Your messages remain available here.</p>
+          <p>Recent feedback</p>
           {notifications.map(n => <p key={n.id}><strong>{n.title}</strong> · {n.message} {n.errorRef && <span>ref: {n.errorRef}</span>} <button aria-label={`Dismiss ${n.title}`} onClick={() => dismiss(n.id)}>Dismiss</button></p>)}
           {omitted > 0 && <p>Capacity limit: {omitted} message details omitted.</p>}
           <button onClick={clearAll}>Clear feedback</button>
         </section>
-      }><Suspense fallback={<div className="notification-loading" role="status">Opening feedback…</div>}>
+  );
+
+  return (
+    <NotificationContext.Provider value={value}>
+      {children}
+      {(hasFeedback || feedbackStarted) && <LoadBoundary label="feedback controls" fallback={feedbackFallback}>
+        <Suspense fallback={feedbackFallback}>
         <NotificationOverlay notifications={notifications} omitted={omitted} dismiss={dismiss} clearAll={clearAll} />
       </Suspense></LoadBoundary>}
     </NotificationContext.Provider>
@@ -97,4 +101,3 @@ export function useNotifications(): NotificationContextValue {
   if (!ctx) throw new Error('useNotifications must be used inside <NotificationProvider>');
   return ctx;
 }
-

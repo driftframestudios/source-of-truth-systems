@@ -98,10 +98,34 @@ test('an unavailable feedback chunk leaves messages and dismiss controls usable'
   await openClockedLab(page);
   await code(page,'SOURCE_FETCH_FAILED').click();
   const fallback=page.getByRole('region',{name:'Recent feedback',exact:true});
-  await expect(fallback).toContainText('Feedback controls couldn’t load');
+  await expect(fallback.getByText('Recent feedback',{exact:true})).toBeVisible();
   await expect(fallback).toContainText('Source fetch failed');
   await expect(fallback).toContainText('ref: err_');
   await fallback.getByRole('button',{name:'Dismiss Source fetch failed',exact:true}).click();
   await expect(fallback).toHaveCount(0);
   await expect(page.getByRole('button',{name:'Error Lab',exact:true})).toBeVisible();
+});
+
+
+test('pending feedback code keeps accepted messages visible on their original deadlines', async ({page}) => {
+  let release;
+  const held = new Promise(resolve=>{release=resolve;});
+  await page.route('**/assets/NotificationOverlay-*.js', async route=>{await held;await route.continue();});
+  try {
+    await openClockedLab(page);
+    await page.getByRole('button',{name:'success toast',exact:true}).click();
+    const fallback=page.getByRole('region',{name:'Recent feedback',exact:true});
+    await expect(fallback).toContainText('Success notice preview');
+    await page.clock.runFor(4999);
+    await expect(fallback).toContainText('Success notice preview');
+    await page.clock.runFor(1);
+    await expect(fallback).toHaveCount(0);
+    await code(page,'SOURCE_FETCH_FAILED').click();
+    await page.clock.runFor(6000);
+    await expect(fallback).toContainText('Source fetch failed');
+    await expect(fallback.getByRole('button',{name:'Dismiss Source fetch failed',exact:true})).toBeVisible();
+    release();
+    await page.getByText('Recent feedback (1)',{exact:true}).click();
+    await expect(page.getByRole('article',{name:'Source fetch failed',exact:true})).toBeVisible();
+  } finally { release(); }
 });

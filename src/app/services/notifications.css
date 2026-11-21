@@ -37,7 +37,7 @@
 :root:is([data-appearance='light'], [data-appearance='contrast']) .notification-dismiss { opacity: 1; }
 @keyframes notice-enter { from { transform: translateX(1rem); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .notification-item--toast { animation: none; } }
-.notification-loading, .notification-fallback { position: fixed; bottom: 1rem; right: 1rem; z-index: 50; width: min(24rem, calc(100vw - 2rem)); background: var(--sot-shell-surface); color: var(--sot-shell-text); border: 1px solid var(--sot-shell-strong-border); padding: .75rem; font-size: 11px; }
+.notification-fallback { position: fixed; bottom: 1rem; right: 1rem; z-index: 50; width: min(24rem, calc(100vw - 2rem)); background: var(--sot-shell-surface); color: var(--sot-shell-text); border: 1px solid var(--sot-shell-strong-border); padding: .75rem; font-size: 11px; }
 .notification-fallback { max-height: 60dvh; overflow: auto; }
 .notification-fallback p { margin-bottom: .5rem; overflow-wrap: anywhere; }
 .notification-fallback button { text-decoration: underline; }
