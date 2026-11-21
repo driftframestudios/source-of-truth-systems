@@ -193,3 +193,13 @@ test('each rejected cross-group link attempt returns feedback', async ({page}) =
   await link.click();
   await expect(page.getByRole('status',{name:'Choose cards in one group',exact:true}).getByLabel('2 occurrences',{exact:true})).toBeVisible();
 });
+
+test('empty negated rule explains its zero result in the compiled rail', async ({ page }) => {
+  await page.goto('/');
+  await openBuilder(page);
+  await page.getByRole('button', { name: 'Clear canvas', exact: true }).click();
+  await page.locator('[data-cohort-group="root"]').getByTitle('Toggle NOT', { exact: true }).click();
+  await expect(page.getByText('Empty negated group — no specimens match', { exact: true })).toBeVisible();
+  await expect(page.locator('.cohort-expression')).toContainText('NOT TRUE');
+  await expect(page.locator('[data-cohort-group="root"]')).toContainText('0 match');
+});

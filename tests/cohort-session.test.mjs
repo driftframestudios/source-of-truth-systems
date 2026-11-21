@@ -305,3 +305,48 @@ test("nested AND/OR/NOT and explicit metric targets retain the existing tumor-bo
   assert.equal(matches.held.length, 1);
   assert.equal(projection.countFacet("coverageMet", "true"), 7);
 });
+
+const { COHORT_FACET_IDS, cohortFacet, emptyRuleText, toExpression, countPredicates, createRuleFactory, createCohortPresets, inspectRuleDefinition } = await import(rules);
+test('facet semantics, expression and empty-group explanation agree with independent results', () => {
+  for (const joiner of ['AND', 'OR']) for (const negated of [false, true]) {
+    const root = { ...rule([], joiner).root, negated };
+    assert.equal(createCohortProjection(STORE.specimens, []).count(root), negated ? 0 : STORE.specimens.length);
+    assert.equal(toExpression(root), negated ? 'NOT TRUE' : 'TRUE');
+    assert.equal(emptyRuleText(root), negated ? 'Empty negated group — no specimens match' : 'Empty — all specimens match');
+  }
+  const specimens = [
+    { ...STORE.specimens[0], id: 'equal', tumorPercent: 30, variantsCalled: 50, consent: 'active' },
+    { ...STORE.specimens[0], id: 'held', tumorPercent: 70, variantsCalled: 1, consent: 'pending' },
+    { ...STORE.specimens[0], id: 'missing', tumorPercent: undefined, variantsCalled: undefined, consent: 'active' },
+  ];
+  const root = rule([{ ...rule([pred('tumorPercent', '30'), pred('variantsCalled', '50')], 'OR').root, id: 'choice' }, pred('consent', 'rescinded', true)]).root;
+  const result = createCohortProjection(specimens, []).match(root);
+  assert.deepEqual(result.matched.map(s => s.id), ['equal', 'held']);
+  assert.deepEqual(result.eligible.map(s => s.id), ['equal']);
+  assert.deepEqual(result.held.map(s => s.id), ['held']);
+  assert.equal(toExpression(root), '(tumorPercent>=30 OR variantsCalled>=50) AND NOT consent=rescinded');
+  assert.equal(countPredicates(root), 3);
+  for (const id of COHORT_FACET_IDS) {
+    assert.ok(cohortFacet(id).label);
+    assert.ok(options[id].length);
+    for (const value of options[id]) assert.ok(Number.isInteger(createCohortProjection(STORE.specimens, STORE.biomarkers).count(pred(id, value))));
+  }
+});
+
+test('preset factories allocate independent identities and admission reports a bounded offending path', () => {
+  let next = 0;
+  const factory = createRuleFactory(kind => `${kind}-${++next}`);
+  const presets = createCohortPresets(factory);
+  for (const preset of presets) {
+    const original = { name: preset.label, root: preset.build(), ignored: 'transport extra' };
+    const second = preset.build();
+    assert.notEqual(original.root.children[0].id, second.children[0].id);
+    const accepted = parseRuleDefinition(JSON.parse(JSON.stringify(original)), options);
+    assert.deepEqual(accepted, { name: original.name, root: original.root });
+    assert.notEqual(accepted.root, original.root);
+    assert.equal(toExpression(accepted.root), toExpression(second));
+  }
+  const invalid = rule([pred('priority', 'unknown')]);
+  assert.deepEqual(inspectRuleDefinition(invalid, options).finding, { code: 'facet-value', path: [0], nodeId: 'priority-unknown' });
+  assert.equal(inspectRuleDefinition(rule([pred('priority', 'stat'), pred('priority', 'stat')]), options).finding.code, 'duplicate-id');
+});
