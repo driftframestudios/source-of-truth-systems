@@ -17,24 +17,125 @@ import {
   type ResultStacks,
 } from "./records";
 
+export const HISTORY_CACHE_LIMITS = { scopes: 4 } as const;
 export interface ScopeCache {
-  histories: Map<string, PlateHistory>;
-  blocked: Map<string, "denied" | "unavailable">;
+  readonly histories: ReadonlyMap<string, PlateHistory>;
+  readonly blocked: ReadonlyMap<string, "denied" | "unavailable">;
+  readonly active: boolean;
+  readonly getSnapshot: () => number;
+  readonly subscribe: (listener: () => void) => () => void;
+  readonly publish: (
+    key: string,
+    result: ReadReceipt,
+  ) => "ready" | "denied" | "unavailable" | undefined;
+  readonly retry: (key: string) => void;
+  readonly retire: () => void;
 }
-export type HistoryCacheStore = Map<string, ScopeCache>;
-export function cacheFor(
-  cache: HistoryCacheStore,
-  scopeKey: string,
-): ScopeCache {
-  let partition = cache.get(scopeKey);
-  if (!partition) {
-    partition = { histories: new Map(), blocked: new Map() };
-    cache.set(scopeKey, partition);
-  }
+function createPartition(): ScopeCache {
+  const histories = new Map<string, PlateHistory>();
+  const blocked = new Map<string, "denied" | "unavailable">();
+  const listeners = new Set<() => void>();
+  let revision = 0,
+    active = true;
+  const changed = () => {
+    revision++;
+    for (const listener of listeners) listener();
+  };
+  const partition: ScopeCache = {
+    histories,
+    blocked,
+    get active() {
+      return active;
+    },
+    getSnapshot: () => revision,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    publish(key, result) {
+      if (!active) return;
+      if ("error" in result) return "unavailable";
+      if (result.value.kind !== "ready") {
+        blocked.set(key, result.value.kind);
+        histories.delete(key);
+        changed();
+        return result.value.kind;
+      }
+      blocked.delete(key);
+      histories.set(key, result.value.history);
+      changed();
+      return "ready";
+    },
+    retry(key) {
+      if (active) {
+        histories.delete(key);
+        changed();
+      }
+    },
+    retire() {
+      active = false;
+      histories.clear();
+      blocked.clear();
+      projections.delete(partition);
+      revision++;
+      // Scope admission may happen during render; notify any former receiver after that turn.
+      queueMicrotask(() => {
+        for (const listener of listeners) listener();
+      });
+    },
+  };
   return partition;
 }
+/** Current scope and three recent scopes. Retired partitions can never accept a late receipt. */
+export function createHistoryCache() {
+  const scopes = new Map<string, ScopeCache>();
+  return {
+    get size() {
+      return scopes.size;
+    },
+    get retainedEntries() {
+      return [...scopes.values()].reduce(
+        (count, scope) => count + scope.histories.size + scope.blocked.size,
+        0,
+      );
+    },
+    forScope(key: string): ScopeCache {
+      let partition = scopes.get(key);
+      if (partition) scopes.delete(key);
+      else {
+        if (scopes.size >= HISTORY_CACHE_LIMITS.scopes) {
+          const oldest = scopes.keys().next().value!;
+          scopes.get(oldest)!.retire();
+          scopes.delete(oldest);
+        }
+        partition = createPartition();
+      }
+      scopes.set(key, partition);
+      return partition;
+    },
+  };
+}
+export type HistoryCacheStore = ReturnType<typeof createHistoryCache>;
+export const cacheFor = (cache: HistoryCacheStore, scopeKey: string) =>
+  cache.forScope(scopeKey);
+
 export const wellCoordinate = (well: Pick<Well, "row" | "col">) =>
   `${"ABCDEFGH"[well.row]}${well.col + 1}`;
+
+const coordinateIndexes = new WeakMap<
+  readonly Well[],
+  ReadonlyMap<string, Well>
+>();
+function coordinateIndex(wells: readonly Well[]): ReadonlyMap<string, Well> {
+  let index = coordinateIndexes.get(wells);
+  if (!index) {
+    index = new Map(wells.map((well) => [wellCoordinate(well), well]));
+    coordinateIndexes.set(wells, index);
+  }
+  return index;
+}
 
 /** A received well replaces the bundled metadata, including an explicitly missing well. */
 export function canonicalWell(
@@ -44,9 +145,7 @@ export function canonicalWell(
   partition: ScopeCache,
 ): Well | undefined {
   const history = partition.histories.get(historyKey(plateId, id));
-  return history
-    ? (history.well ?? undefined)
-    : wells.find((well) => wellCoordinate(well) === id);
+  return history ? (history.well ?? undefined) : coordinateIndex(wells).get(id);
 }
 
 type ReadReceipt =
@@ -63,20 +162,13 @@ export function publishScopedHistory(
   currentScopeKey: string,
   result: ReadReceipt,
 ) {
-  if (capturedScopeKey !== currentScopeKey) return undefined;
-  if ("error" in result) return "unavailable" as const;
-  if (result.value.kind !== "ready") {
-    partition.blocked.set(key, result.value.kind);
-    partition.histories.delete(key);
-    return result.value.kind;
-  }
-  partition.blocked.delete(key);
-  partition.histories.set(key, result.value.history);
-  return "ready" as const;
+  if (capturedScopeKey !== currentScopeKey || !partition.active)
+    return undefined;
+  return partition.publish(key, result);
 }
 
 /** One current-scope projection supplies geometry, metadata, counts and relationship targets. */
-export function projectScopedPlate(
+function buildScopedPlate(
   scope: PermissionScope,
   plateId: string,
   wells: readonly Well[],
@@ -84,12 +176,15 @@ export function projectScopedPlate(
   partition: ScopeCache,
   ownership: RecordOwnership,
 ) {
+  const histories = new Map(partition.histories);
+  const blocked = new Map(partition.blocked);
   const readableWells = new Map<string, Well>();
   const canonicalWells = new Map<string, Well>();
   for (const template of wells) {
     const id = wellCoordinate(template);
-    if (partition.blocked.has(historyKey(plateId, id))) continue;
-    const well = canonicalWell(plateId, id, wells, partition);
+    if (blocked.has(historyKey(plateId, id))) continue;
+    const received = histories.get(historyKey(plateId, id));
+    const well = received ? (received.well ?? undefined) : template;
     const visible = well && projectWellFields(scope, well, ownership);
     if (visible && well) {
       canonicalWells.set(id, well);
@@ -99,7 +194,7 @@ export function projectScopedPlate(
   const rawStacks = projectPlateHistories(
     plateId,
     examples,
-    partition.histories,
+    histories,
   );
   const rawResults = new Map<string, WellResult>();
   for (const [id, results] of rawStacks) {
@@ -134,8 +229,8 @@ export function projectScopedPlate(
     );
   }
   const historyFor = (id: string): PlateHistory | undefined => {
-    if (partition.blocked.has(historyKey(plateId, id))) return undefined;
-    const received = partition.histories.get(historyKey(plateId, id));
+    if (blocked.has(historyKey(plateId, id))) return undefined;
+    const received = histories.get(historyKey(plateId, id));
     if (!received) return undefined;
     if (received.well && !canReadWell(scope, received.well, ownership).ok)
       return undefined;
@@ -146,4 +241,28 @@ export function projectScopedPlate(
     };
   };
   return { wells: [...readableWells.values()], stacks, historyFor };
+}
+
+// One stable projection per partition/input revision, shared by graphic and companion receivers.
+type ProjectionArguments = Parameters<typeof buildScopedPlate>;
+const projections = new WeakMap<
+  ScopeCache,
+  {
+    args: ProjectionArguments;
+    revision: number;
+    value: ReturnType<typeof buildScopedPlate>;
+  }
+>();
+export function projectScopedPlate(...args: ProjectionArguments) {
+  const partition = args[4];
+  const revision = partition.getSnapshot();
+  const previous = projections.get(partition);
+  if (
+    previous?.revision === revision &&
+    args.every((arg, index) => arg === previous.args[index])
+  )
+    return previous.value;
+  const value = buildScopedPlate(...args);
+  projections.set(partition, { args, revision, value });
+  return value;
 }
