@@ -1,0 +1,58 @@
+import { test, expect } from '@playwright/test';
+
+test('a local shared-file recovery completes across layouts and replays from either alias', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'plate', exact: true }).click();
+  await page.getByRole('button', { name: /^C3 VUS reanalysis/ }).first().click();
+  let record = page.locator('[data-scene-controls]');
+  await record.getByRole('tab', { name: 'R1', exact: true }).click();
+  const bam = () => record.getByRole('button', { name: 'Copy S3 URI for BAM', exact: true }).locator('..').locator('..');
+  await bam().getByRole('button', { name: 'restore', exact: true }).click();
+  await record.getByRole('button', { name: /^Standard 3–5 h/ }).click();
+  await expect(bam()).toContainText('≈ 4.0 h');
+  await page.setViewportSize({ width: 390, height: 844 });
+  record = page.locator('.plate-compact-record');
+  await record.getByRole('button', { name: 'Files', exact: true }).click();
+  await record.getByRole('button', { name: 'Complete example · BAM restore', exact: true }).click();
+  await expect(bam()).toContainText('· now');
+  await expect(record.getByRole('button', { name: 'Complete example · BAM restore', exact: true })).toHaveCount(0);
+  await page.screenshot({ path: '.visual-runs/plate-recovery-mobile.png' });
+  await page.setViewportSize({ width: 1512, height: 982 });
+  record = page.locator('[data-scene-controls]');
+  await record.getByRole('tab', { name: 'R2', exact: true }).click();
+  await expect(bam()).toContainText('· now');
+  await record.getByRole('button', { name: 'Replay · BAM restore', exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: '.visual-runs/plate-recovery-desktop.png' });
+  await record.getByRole('button', { name: 'Replay · BAM restore', exact: true }).click();
+  await expect(bam().getByRole('button', { name: 'restore', exact: true })).toBeVisible();
+  await record.getByRole('tab', { name: 'R1', exact: true }).click();
+  await expect(bam().getByRole('button', { name: 'restore', exact: true })).toBeVisible();
+});
+
+test('a local legacy query rebuild becomes queryable and can replay without waiting for its operational ETA', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Profile', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Showcase persona' }).selectOption('prin_okafor');
+  await page.getByRole('group', { name: 'Workspace role' }).getByRole('button', { name: 'Analyst', exact: true }).click();
+  await page.getByRole('button', { name: /RES.*us-west/ }).click();
+  await page.getByRole('option', { name: /^STG/ }).click();
+  await page.getByRole('button', { name: /^Lanes/ }).click();
+  await page.getByRole('button', { name: 'plate', exact: true }).click();
+  await page.getByRole('button', { name: /^A9 / }).first().click();
+  const record = page.locator('[data-scene-controls]');
+  await record.getByRole('tab', { name: 'T0', exact: true }).click();
+  await record.getByRole('button', { name: 'Restore + rebuild', exact: true }).click();
+  await expect(record).toContainText('Restore + rebuild running');
+  await record.getByRole('button', { name: 'Complete example · query recovery', exact: true }).click();
+  await expect(record).toContainText('Queryable — repaired this session');
+  await record.getByRole('button', { name: 'Replay · query recovery', exact: true }).click();
+  await expect(record.getByRole('button', { name: 'Restore + rebuild', exact: true })).toBeVisible();
+  await record.getByRole('button', { name: 'Restore + rebuild', exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const compact = page.locator('.plate-compact-record');
+  await compact.getByRole('button', { name: 'Lifecycle', exact: true }).click();
+  await compact.getByRole('button', { name: 'Complete example · query recovery', exact: true }).click();
+  await expect(compact).toContainText('Queryable — repaired this session');
+});

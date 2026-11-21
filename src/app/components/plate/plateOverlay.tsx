@@ -11,8 +11,7 @@ import { PLATE_OWNERSHIP } from '../../services/plateHistory/ownership';
 
 import { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import type { ArtifactRestore, WellResult } from '../../types';
-import type { AthenaOverlay } from '../../services/dataAvailability';
+import type { WellResult } from '../../types';
 import { ARTIFACT_LABEL, formatBytes, formatUsd, restoreCost, restoreWindow } from '../../services/dataAvailability';
 import { groupResultsByWell, PLATE_ID, RESULTS_NOW_ISO } from '../../data/wellResults';
 import { STORE } from '../../data';
@@ -23,13 +22,11 @@ import type { CommandResult } from '../../services/command';
 import { createPlateCommands, type PlateCommand } from './plateCommands';
 import { useNotifications } from '../../services/notifications';
 import { applyResultRestores, createPlateOverlayState, plateOverlayReducer } from './plateOverlayState';
-import type { PlateOverlayAction } from './plateOverlayState';
+import type { PlateOverlayAction, PlateOverlayState } from './plateOverlayState';
 import { createSessionState } from '../../services/browserSession';
 import { useSessionResource, useSessionSnapshot } from '../../services/browserSessionContext';
 
-interface PlateOverlayValue {
-  readonly restores: Readonly<Record<string, ArtifactRestore>>;
-  readonly athena: Readonly<Record<string, AthenaOverlay>>;
+interface PlateOverlayValue extends Pick<PlateOverlayState, 'restores' | 'athena'> {
   apply: (r: WellResult) => WellResult;
   preview: (command: PlateCommand) => CommandResult;
   execute: (command: PlateCommand) => Promise<CommandResult>;
@@ -59,7 +56,7 @@ export function PlateOverlayProvider({ children }: { children: ReactNode }) {
       if (task.kind !== 'repair' || task.state !== 'running') continue;
       const { at, wellId, label, runDate } = task.completion;
       const finish = () => {
-        if (!commit({ type: 'athena.complete', resultId })) return;
+        if (!commit({ type: 'athena.complete', resultId, generation: task.generation })) return;
         // Accepted work completes; its notification still follows the current read scope.
         if (!resolve({ plateId: PLATE_ID, wellId, resultId })) return;
         pushToast({ severity: 'info', title: 'Partition registered', message: `genomics.variants_legacy now sees run_date=${runDate} — ${wellId} · ${label} is queryable.` });
@@ -87,9 +84,9 @@ export function PlateOverlayProvider({ children }: { children: ReactNode }) {
       const result = command.result;
       if (command.type === 'artifact.restore') {
         const { artifact, option } = command;
-        pushToast({ severity: 'info', title: `${option.label} restore requested`, message: `${ARTIFACT_LABEL[artifact.kind]} for ${result.wellId} · ${result.label} (${formatBytes(artifact.sizeBytes)}) — readable in ${restoreWindow(option)}, est. ${formatUsd(restoreCost(option, artifact.sizeBytes))}.` });
+        pushToast({ severity: 'info', title: `${option.label} restore requested`, message: `${ARTIFACT_LABEL[artifact.kind]} for ${result.wellId} · ${result.label} (${formatBytes(artifact.sizeBytes)}) — typical wait ${restoreWindow(option)}, est. ${formatUsd(restoreCost(option, artifact.sizeBytes))}. Choose Complete example to see the local result now.` });
       } else if (command.type === 'query.rebuild') {
-        pushToast({ severity: 'info', title: 'Restore + rebuild queued', message: `Parquet for run_date=${result.runDate} is being restored from Glacier; the CTAS rebuild starts when objects are readable (3–5 h).` });
+        pushToast({ severity: 'info', title: 'Restore + rebuild queued', message: `This local example represents a 3–5 h restore followed by a table rebuild. Choose Complete example to see the queryable result now.` });
       }
     },
     copy: (uri) => navigator.clipboard.writeText(uri),

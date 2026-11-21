@@ -27,3 +27,35 @@ Each partition publishes a stable numeric revision through `useSyncExternalStore
 A fresh projection reuses each template well in one coordinate pass; standalone command lookup uses a weak-key index of the immutable template array. At 96 wells, the focused probe reads row coordinates 384 times including policy/field projection, and reusing the same snapshot adds zero reads. This measures bounded source work rather than device frame rate. Result and permission-policy traversal retain their separate costs.
 
 Retention and freshness remain separate: accepted histories survive recent-scope returns and desktop/mobile remounts; explicit Retry refreshes the selected history and ordinary reload starts a fresh app cache. Denied, missing and authoritatively unavailable histories retain their established disclosure/fallback rules. Focused tests cover eviction, delayed receipts, subscriber agreement and coordinate work; the existing history, scope and responsive Plate journeys own the visible interaction checks.
+
+## Local recovery completion and replay
+
+The existing file and query actions now lead to a complete browser-session
+example. **Complete example** settles a requested restore or query recovery
+immediately; **Replay** returns that task to its original fixture posture so the
+visitor can choose a tier or request recovery again. The small control rail sits
+beside the affected file or query and uses the existing shell tokens in both
+result layouts. Real-world ETAs remain contextual. These controls change local
+state; hosted files and query services retain their own operational adapters.
+
+`plateCommands.ts` resolves the current result, ownership, consent and permission
+for every completion and replay. `plateOverlayState.ts` assigns a monotonically
+increasing generation to each accepted task; completion and replay name that
+exact generation. Stale actions leave the new task intact. File tasks retain
+physical-key identity, so completion/replay updates every permitted alias while
+each result's consent remains authoritative. Query completion affects only its
+result. Other accepted tasks stay in place.
+
+The immutable scientific snapshot still owns lifecycle age. Explicit completion
+uses that same injected snapshot time for a seven-day restored-copy window; it
+requires neither wall-clock waiting nor animation. Partition repair retains its
+existing short local deadline, now guarded by task generation. The retained
+browser-session resource survives navigation and responsive remounts. A reload
+starts a fresh local example. Current read scope still controls projections and
+current permissions guard new actions; local completion grants no additional
+access.
+
+Focused reducer/command cases exercise shared files, queryability, replay,
+obsolete generations, consent and changed permissions. The recovery browser
+journey exercises direct completion, replay and retained state across desktop
+and mobile with reduced motion. Hosted execution remains a separate boundary.
