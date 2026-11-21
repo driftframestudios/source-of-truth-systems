@@ -548,7 +548,7 @@ export function BooleanBuilderView() {
                 {p.label}
               </button>
             ))}
-            <button onClick={() => { edit({ type: 'open', root: { ...root, children: [] } }); }}
+            <button onClick={() => { edit({ type: 'open', root: { ...SEED, id: root.id, children: [] } }); }}
               className="p-1 text-[var(--sot-shell-muted)] hover:text-[var(--sot-shell-text)]" title="Clear canvas"><RotateCcw size={10} /></button>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-1.5">

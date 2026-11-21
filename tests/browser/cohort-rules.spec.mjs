@@ -165,3 +165,17 @@ test('removing an ancestor reconciles focus before the next palette action', asy
   await expect(root).toBeVisible();
   await page.screenshot({path:'.visual-runs/cohort-focus-compact.png'});
 });
+
+
+test('clear restores AND and an unnegated root before adding new cards', async ({page}) => {
+  await page.goto('/');
+  await openBuilder(page);
+  await page.getByRole('button',{name:'Governance holds',exact:true}).click();
+  const root = page.locator('[data-cohort-group="root"]');
+  await root.getByTitle('Toggle NOT',{exact:true}).first().click();
+  await page.getByRole('button',{name:'Clear canvas',exact:true}).click();
+  await expect(page.getByLabel('Current cohort counts')).toContainText('10 matched');
+  await page.getByTitle('Add Order workflow on_hold to the focused group',{exact:true}).click();
+  await page.getByTitle('Add Order workflow in_progress to the focused group',{exact:true}).click();
+  await expect(page.getByLabel('Current cohort counts')).toContainText('0 matched');
+});
