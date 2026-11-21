@@ -47,7 +47,9 @@ npm run test:browser -- tests/browser/responsive-exploration.spec.mjs
 
 The guarded `test:mysql` runner accepts only a local disposable database with the declared test/proof naming pattern, sequences destructive fixture setup and leaves its final installed fixture for optional browser proof. It never supplies evidence for a hosted database. [Automation](../docs/development-automation.md) documents required settings, manual Browser/PostgreSQL clone/MySQL compatibility/Publication scan choices and optional shared setup. A skipped check records a selection; it establishes no behavior result.
 
-New clones carry workflow files, not repository settings or secrets. Current Core checks run on eligible ready PRs unless disabled by the repository variable; optional jobs remain manually selected. Follow the current workflow YAML when selecting a check or configuring a required result.
+Every pull request targeting `main`, including drafts and retargeting edits, receives **Verify change**. That workflow selects the documentation or Core population from the changed owners and scans the complete committed tree. The separate **Core checks** workflow is manual-only; Browser, database and publication checks also retain deliberate dispatch. Optional checks expose `run_checks=false` to skip their allocation, while Verify change always executes its selected route.
+
+New clones carry workflow files and disabled [ruleset templates](../.github/rulesets/README.md). Their owners configure repository settings and required results separately. In this receiving repository, the installed review contract names Verify change; template enforcement values describe the reusable files rather than the live account. [Automation](../docs/development-automation.md) and the executable workflow YAML own detailed triggers, populations and concurrency.
 
 For a visual change, also inspect the affected scene, density, focus and settled animation. Browser assertions support those observations but cannot replace a receiving-device or host check. Return the exact revision, checks run, their result and the next useful observation in the existing PR.
 

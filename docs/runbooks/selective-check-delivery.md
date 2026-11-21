@@ -43,7 +43,7 @@ For GitHub Actions, verify the selected branch/tag and use these controls:
 | Retained MySQL compatibility | Optional MySQL compatibility proof | Isolated service and owned destructive sequence; shared databases remain untouched. |
 | Intentionally rest a manual route | `run_checks=false` | Whole job skipped before runner/services; no behavior or artifact result. |
 
-Optional dispatches default `run_checks=true`; Verify change always runs. Browser smoke and full-suite results retain their different populations. SQL proof stays separately selected. The inactive main profile names the unfiltered Verify change job; docs protection has a separately pinned data-only check. See [automation](../development-automation.md) for exact trigger and concurrency rules.
+Optional dispatches default `run_checks=true`; Verify change always runs. Browser smoke and full-suite results retain their different populations. SQL proof stays separately selected. The receiving main review contract names Verify change; docs protection has a separately pinned data-only check. The [versioned ruleset files](../../.github/rulesets/README.md) remain disabled import templates for a future receiver, whose owner activates its own account rules. See [automation](../development-automation.md) for exact trigger and concurrency rules.
 
 **Checkpoint:** Preparation matches the checked source and selected population. An existing package cache still receives frozen install verification. Separate jobs share setup code/cache, not a VM or accepted build/test result. Reuse within the Browser job retains one source and environment identity.
 

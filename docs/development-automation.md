@@ -21,6 +21,10 @@ For a shared dependency or release candidate, select Browser `suite=all` and `in
 
 Manual Actions use the selected branch/tag; compare the run commit with the reviewed revision. Documentation release Actions additionally require the protected main receiver and exact accepted source coordinates. Automatic PR checks use GitHub's proposed merge revision. New source earns fresh evidence for affected behavior. Required Verify change has no PR path filter; it selects its observation inside the job. The active docs-branch check uses pinned main tooling. The receiving repository's Pages source is Actions, with explicit [tagged artifact activation](runbooks/tagged-documentation-release.md); copying workflow files alone installs no account settings.
 
+## Workflow and account ownership
+
+Workflow YAML owns triggers, selected populations and token permissions. This guide routes readers to those executable owners; [tests](../tests/README.md) and [runbooks](runbooks/README.md) select the evidence for a change. The [ruleset guide](../.github/rulesets/README.md) owns the distinction between reusable disabled templates and the receiving repository’s installed review contract. Copying templates prepares a future clone; its owner separately configures and verifies account protections. A fresh account readback establishes current settings whenever a collaboration needs to change or audit them.
+
 ## Preparation and execution
 
 The shared [prepare action](../.github/actions/prepare/action.yml) reads Node/pnpm from the package, restores the lockfile-keyed package store and performs a frozen installation. Separate jobs receive separate environments. Selected Browser steps reuse one installation/build. Package caches provide dependency bytes, not previously accepted build or test results.

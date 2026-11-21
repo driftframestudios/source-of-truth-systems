@@ -70,7 +70,7 @@ The flag admits the three stored-workspace browser journeys; the fresh productio
 
 The [automation contract](../../../../docs/development-automation.md) and YAML own the current policy:
 
-- Verify change receives every main PR with a docs/Core selection and committed-tree scan. The inactive main profile requires that unfiltered job; Core also remains an optional manual route.
+- Verify change receives every main PR with a docs/Core selection and committed-tree scan. The receiving main review contract requires that result; Core remains an optional manual route. The [ruleset guide](../../../../.github/rulesets/README.md) distinguishes installed account rules from the disabled versioned templates supplied to future clones.
 - Optional dispatches default `run_checks=true`; false skips before runner/services. Verify change always runs. A skipped optional route supplies no behavior evidence.
 - Browser defaults to `scene-smoke`: the core, responsive-exploration and guided-exploration files. It uses runner Chrome with a version receipt, falling back to locked Chromium. `all` uses locked Playwright Chromium.
 - `include_core=true` runs types, the CSS 3D guard and aggregate Node checks in the same Browser job. For complete ordinary interaction proof select `all` with this option.
