@@ -2,7 +2,7 @@ import { useCorridorReadScope } from "../../services/useCorridorReadScope";
 import { useGuide } from '../guide/GuideProvider';
 import { useGuideScene } from '../guide/useGuideScene';
 import { createPortal } from "react-dom";
-import { lazy, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import {
   ArrowDownLeft,
@@ -212,10 +212,11 @@ export function MobileCorridor({ active = true }: { active?: boolean }) {
     );
   }, [travel, active, documentVisible, reducedMotion, companion]);
 
-  function selectCard(id: string) {
+  const selectCard = useCallback((id: string) => {
     setSelectedCardId(id);
     setCompanion({ kind: "card", id });
-  }
+  }, [setSelectedCardId]);
+  const selectLane = useCallback((id: LaneId) => setCompanion({ kind: "lane", id }), []);
   function closeCompanion() {
     setCompanion(null);
   }
@@ -555,7 +556,7 @@ export function MobileCorridor({ active = true }: { active?: boolean }) {
             travelX={travel ? travelX : null}
             selectedCardId={selectedCardId}
             onCardClick={selectCard}
-            onLaneClick={(id) => setCompanion({ kind: "lane", id })}
+            onLaneClick={selectLane}
           />
           {!projection.cards.length && (
             <div className="mobile-corridor-empty">
