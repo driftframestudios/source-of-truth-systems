@@ -1,4 +1,6 @@
-import { projectCorridor } from './corridorProjection';
+import { memo, useMemo } from 'react';
+import { projectCorridorGeometry, LANE_LENGTH_PX, LANE_WIDTH_PX, LANE_GAP_PX } from './corridorProjection';
+export { LANE_LENGTH_PX } from './corridorProjection';
 import type {
   Lane, LaneCard, LaneCardKind, LaneId, LaneArrow, Pennant,
   LaneFlag, LaneFlagKind, LaneSurfaceLabel,
@@ -16,15 +18,15 @@ interface CardStyle {
   label: string;
 }
 
-export function cardStyle(kind: LaneCardKind): CardStyle {
-  switch (kind) {
-    case 'process':     return { bg: '#f5f1e6', fg: '#1a1a1a', border: '#8a7a4a', topStripe: '#1a1a1a', faceWidth: 86,  faceHeight: 52, label: 'Process' };
-    case 'state_major': return { bg: '#e8d36a', fg: '#1a1100', border: '#8a7a2a', topStripe: '#1a1100', faceWidth: 118, faceHeight: 60, label: 'Major' };
-    case 'state_minor': return { bg: '#d8854a', fg: '#2a1100', border: '#8a4a1a', topStripe: '#2a1100', faceWidth: 96,  faceHeight: 54, label: 'Minor' };
-    case 'control':     return { bg: '#cfd1cc', fg: '#1a1a1a', border: '#6a6a66', topStripe: '#1a1a1a', faceWidth: 78,  faceHeight: 48, label: 'Control' };
-    case 'nested':      return { bg: '#ffffff', fg: '#1a1a1a', border: '#4a4a4a', topStripe: '#000000', faceWidth: 40,  faceHeight: 28, label: 'Nested' };
-  }
-}
+const CARD_STYLES = {
+  process: { bg: '#f5f1e6', fg: '#1a1a1a', border: '#8a7a4a', topStripe: '#1a1a1a', faceWidth: 86, faceHeight: 52, label: 'Process' },
+  state_major: { bg: '#e8d36a', fg: '#1a1100', border: '#8a7a2a', topStripe: '#1a1100', faceWidth: 118, faceHeight: 60, label: 'Major' },
+  state_minor: { bg: '#d8854a', fg: '#2a1100', border: '#8a4a1a', topStripe: '#2a1100', faceWidth: 96, faceHeight: 54, label: 'Minor' },
+  control: { bg: '#cfd1cc', fg: '#1a1a1a', border: '#6a6a66', topStripe: '#1a1a1a', faceWidth: 78, faceHeight: 48, label: 'Control' },
+  nested: { bg: '#ffffff', fg: '#1a1a1a', border: '#4a4a4a', topStripe: '#000000', faceWidth: 40, faceHeight: 28, label: 'Nested' },
+} as const satisfies Record<LaneCardKind, Readonly<CardStyle>>;
+
+export function cardStyle(kind: LaneCardKind): Readonly<CardStyle> { return CARD_STYLES[kind]; }
 
 export const PENNANT_COLOR: Record<Pennant['kind'], { bg: string; fg: string }> = {
   spe:    { bg: '#d63838', fg: '#ffffff' },
@@ -79,9 +81,7 @@ export const DEFAULT_CONTROL: ControlState = {
 
 // ===== Geometry ==============================================================
 
-export const LANE_LENGTH_PX = 2640;   // doubled
-const LANE_WIDTH_PX = 140;
-const LANE_GAP_PX = 16;
+
 
 // =============================================================================
 // Corridor scene
@@ -103,20 +103,8 @@ export function CorridorScene({
   onCardClick: (id: string) => void;
   onLaneClick: (id: LaneId) => void;
 }) {
-  const projection = projectCorridor(visibleLanes, visibleCards, arrows);
-  function laneYOffset(lane: Lane): number | null {
-    const idx = visibleLanes.findIndex((l) => l.id === lane.id);
-    if (idx < 0) return null;
-    return (idx - (visibleLanes.length - 1) / 2) * (LANE_WIDTH_PX + LANE_GAP_PX);
-  }
-
-  function cardCenter(card: LaneCard): { x: number; y: number } | null {
-    const lane = visibleLanes.find((l) => l.id === card.laneId);
-    if (!lane) return null;
-    const yOff = laneYOffset(lane);
-    if (yOff == null) return null;
-    return { x: card.position * LANE_LENGTH_PX - LANE_LENGTH_PX / 2, y: yOff };
-  }
+  const projection = useMemo(() => projectCorridorGeometry(visibleLanes, visibleCards, arrows, flags, surfaceLabels),
+    [visibleLanes, visibleCards, arrows, flags, surfaceLabels]);
 
   return (
     <div
@@ -133,33 +121,33 @@ export function CorridorScene({
           transition: 'none',
         }}
       >
-        {visibleLanes.map((lane) => {
-          const yOff = laneYOffset(lane);
-          if (yOff == null) return null;
-          return (
-            <LaneSurface
-              key={lane.id}
-              lane={lane}
-              yOff={yOff}
-              cards={projection.cards.filter((c) => c.laneId === lane.id)}
-              flags={flags.filter((f) => f.laneId === lane.id)}
-              surfaceLabels={surfaceLabels.filter((s) => s.laneId === lane.id)}
-              travelX={travelX}
-              selectedCardId={selectedCardId}
-              onCardClick={onCardClick}
-              onClick={() => onLaneClick(lane.id)}
-            />
-          );
-        })}
+        <CorridorContent projection={projection} showArrows={ctrl.showArrows} travelX={travelX}
+          selectedCardId={selectedCardId} onCardClick={onCardClick} onLaneClick={onLaneClick} />
+      </div>
+    </div>
+  );
+}
 
-        {ctrl.showArrows && (
+const CorridorContent = memo(function CorridorContent({ projection, showArrows, travelX, selectedCardId, onCardClick, onLaneClick }: {
+  projection: ReturnType<typeof projectCorridorGeometry>;
+  showArrows: boolean; travelX: number | null; selectedCardId: string | null;
+  onCardClick: (id: string) => void; onLaneClick: (id: LaneId) => void;
+}) {
+  return <>
+        {projection.rows.map(({ lane, yOff, cards, flags, surfaceLabels }) => (
+            <LaneSurface key={lane.id} lane={lane} yOff={yOff} cards={cards} flags={flags}
+              surfaceLabels={surfaceLabels} travelX={travelX} selectedCardId={selectedCardId}
+              onCardClick={onCardClick} onClick={() => onLaneClick(lane.id)} />
+        ))}
+
+        {showArrows && (
           <svg
             width={LANE_LENGTH_PX + 200}
-            height={(visibleLanes.length + 1) * (LANE_WIDTH_PX + LANE_GAP_PX) + 80}
+            height={(projection.rows.length + 1) * (LANE_WIDTH_PX + LANE_GAP_PX) + 80}
             style={{
               position: 'absolute',
               left: -(LANE_LENGTH_PX + 200) / 2,
-              top: -((visibleLanes.length + 1) * (LANE_WIDTH_PX + LANE_GAP_PX) + 80) / 2,
+              top: -((projection.rows.length + 1) * (LANE_WIDTH_PX + LANE_GAP_PX) + 80) / 2,
               transform: 'translateZ(4px)',
               overflow: 'visible',
               pointerEvents: 'none',
@@ -176,13 +164,8 @@ export function CorridorScene({
                 <path d="M0,0 L0,6 L8,3 z" fill="#1f2a5a" />
               </marker>
             </defs>
-            <g transform={`translate(${(LANE_LENGTH_PX + 200) / 2}, ${((visibleLanes.length + 1) * (LANE_WIDTH_PX + LANE_GAP_PX) + 80) / 2})`}>
-              {projection.connections.map(({ arrow: a, from: f, to: t }) => {
-                const fc = cardCenter(f);
-                const tc = cardCenter(t);
-                if (!fc || !tc) return null;
-                const dy = tc.y - fc.y;
-                const cy = Math.min(fc.y, tc.y) - Math.abs(dy) * 0.4 - 30;
+            <g transform={`translate(${(LANE_LENGTH_PX + 200) / 2}, ${((projection.rows.length + 1) * (LANE_WIDTH_PX + LANE_GAP_PX) + 80) / 2})`}>
+              {projection.connections.map(({ arrow: a, path }) => {
                 const stroke = a.kind === 'reciprocal' ? '#d63838'
                   : a.kind === 'review' ? '#1f2a5a'
                   : a.kind === 'deferred' ? '#8a8a8a'
@@ -190,11 +173,10 @@ export function CorridorScene({
                 const head = a.kind === 'reciprocal' ? 'arrowhead-recip'
                   : a.kind === 'review' ? 'arrowhead-review'
                   : 'arrowhead-flow';
-                const dx = tc.x - fc.x;
                 return (
                   <path
                     key={a.id}
-                    d={`M ${fc.x} ${fc.y - 20} Q ${(fc.x + tc.x) / 2 + dx * 0.1} ${cy} ${tc.x} ${tc.y - 20}`}
+                    d={path}
                     fill="none"
                     stroke={stroke}
                     strokeWidth={a.kind === 'reciprocal' ? 1.8 : 1.4}
@@ -207,10 +189,8 @@ export function CorridorScene({
             </g>
           </svg>
         )}
-      </div>
-    </div>
-  );
-}
+  </>;
+});
 
 // =============================================================================
 // Lane surface — flat plank with striped header, picket comb, label, flags

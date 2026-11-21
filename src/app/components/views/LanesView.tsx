@@ -175,9 +175,10 @@ function LanesAtlas({ onCrossNavigate, active = true }: LanesViewProps) {
   }, [lanes, ctrl.hidden, ctrl.viewMode, ctrl.focused]);
 
   const visibleCards = useMemo<ReadonlyArray<LaneCard>>(() => {
+    const laneIds = new Set(visibleLanes.map(lane => lane.id));
     return cards
       .filter((c) => !ctrl.hideKinds.has(c.kind))
-      .filter((c) => visibleLanes.some((l) => l.id === c.laneId))
+      .filter((c) => laneIds.has(c.laneId))
       .filter((c) => matchesQuery(query, c.label, c.note, c.id, c.laneId));
   }, [cards, ctrl.hideKinds, visibleLanes, query]);
 

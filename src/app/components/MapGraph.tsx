@@ -1,8 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { GraphNode, GraphEdge, SourceRole, SourceStatus } from '../types';
 
-const NODE_W = 160;
-const NODE_H = 58;
+import { projectMapGraph, NODE_W, NODE_H } from './mapProjection';
 const DEFAULT_VIEW_W = 1000;
 const DEFAULT_VIEW_H = 580;
 
@@ -25,39 +24,6 @@ const STATUS_RING: Record<SourceStatus, string> = {
   exploratory: 'var(--sot-status-violet)',
 };
 
-function computeEdgePath(
-  nodes: ReadonlyArray<GraphNode>,
-  edge: GraphEdge,
-): string {
-  const from = nodes.find((n) => n.id === edge.from);
-  const to = nodes.find((n) => n.id === edge.to);
-  if (!from || !to) return '';
-
-  const fromOffX = edge.fromOffsetX ?? 0;
-  const toOffX = edge.toOffsetX ?? 0;
-
-  const sameY = Math.abs(from.y - to.y) < 15;
-
-  if (sameY) {
-    const goRight = to.x > from.x;
-    const sx = from.x + fromOffX + (goRight ? NODE_W / 2 : -NODE_W / 2);
-    const ex = to.x + toOffX + (goRight ? -NODE_W / 2 : NODE_W / 2);
-    const sy = from.y;
-    const ey = to.y;
-    const cy = Math.min(sy, ey) - 35;
-    const mx = (sx + ex) / 2;
-    return `M ${sx} ${sy} Q ${mx} ${cy} ${ex} ${ey}`;
-  }
-
-  const goDown = to.y > from.y;
-  const sx = from.x + fromOffX;
-  const sy = from.y + (goDown ? NODE_H / 2 : -NODE_H / 2);
-  const ex = to.x + toOffX;
-  const ey = to.y + (goDown ? -NODE_H / 2 : NODE_H / 2);
-  const midY = (sy + ey) / 2;
-
-  return `M ${sx} ${sy} C ${sx} ${midY}, ${ex} ${midY}, ${ex} ${ey}`;
-}
 
 
 interface Props {
@@ -77,6 +43,7 @@ export function MapGraph({ nodes, edges, onNodeClick, selectedNodeId, viewW, vie
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
+  const projection = useMemo(() => projectMapGraph(nodes, edges), [nodes, edges]);
   const activeNode = hoveredNode ?? selectedNodeId;
 
   const isEdgeHighlighted = useCallback(
@@ -91,13 +58,9 @@ export function MapGraph({ nodes, edges, onNodeClick, selectedNodeId, viewW, vie
     (nodeId: string) => {
       if (!activeNode) return true;
       if (nodeId === activeNode) return true;
-      return edges.some(
-        (e) =>
-          (e.from === activeNode && e.to === nodeId) ||
-          (e.to === activeNode && e.from === nodeId),
-      );
+      return projection.neighbors.get(activeNode)?.has(nodeId) ?? false;
     },
-    [activeNode, edges],
+    [activeNode, projection],
   );
 
   return (
@@ -107,7 +70,7 @@ export function MapGraph({ nodes, edges, onNodeClick, selectedNodeId, viewW, vie
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
       <defs>
-        {edges.map((edge) => (
+        {projection.connections.map(({ edge }) => (
           <marker
             key={`arrow-${edge.id}`}
             id={`arrow-${edge.id}`}
@@ -137,8 +100,7 @@ export function MapGraph({ nodes, edges, onNodeClick, selectedNodeId, viewW, vie
       ))}
 
       {/* Edges */}
-      {edges.map((edge) => {
-        const path = computeEdgePath(nodes, edge);
+      {projection.connections.map(({ edge, path, lx, ly }) => {
         const dimmed = activeNode !== null && !isEdgeHighlighted(edge);
         const highlight = hoveredEdge === edge.id;
         const flowToPacket = edge.to === 'arc02_packet';
@@ -182,24 +144,6 @@ export function MapGraph({ nodes, edges, onNodeClick, selectedNodeId, viewW, vie
               </>
             )}
             {(() => {
-              const from = nodes.find((n) => n.id === edge.from);
-              const to = nodes.find((n) => n.id === edge.to);
-              if (!from || !to) return null;
-              const fromOffX = edge.fromOffsetX ?? 0;
-              const toOffX = edge.toOffsetX ?? 0;
-              const sameY = Math.abs(from.y - to.y) < 15;
-              let lx: number;
-              let ly: number;
-              if (sameY) {
-                const goRight = to.x > from.x;
-                const sx = from.x + fromOffX + (goRight ? NODE_W / 2 : -NODE_W / 2);
-                const ex = to.x + toOffX + (goRight ? -NODE_W / 2 : NODE_W / 2);
-                lx = (sx + ex) / 2;
-                ly = Math.min(from.y, to.y) - 44;
-              } else {
-                lx = (from.x + fromOffX + to.x + toOffX) / 2;
-                ly = (from.y + to.y) / 2;
-              }
               if (!highlight && !isEdgeHighlighted(edge)) return null;
               return (
                 <text
