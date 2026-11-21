@@ -45,6 +45,17 @@ const failure = (
   reason: string,
   code: FailureCode = "OWNER_UNAVAILABLE",
 ): CommandResult => commandRefusal("unavailable", reason, code);
+const statusFailure = (status: SourceWorkspaceStatus): CommandResult =>
+  failure(
+    status.message,
+    status.phase === "expired"
+      ? "WORKSPACE_EXPIRED"
+      : status.phase === "absent"
+        ? "WORKSPACE_ABSENT"
+        : status.phase === "denied"
+          ? "PERMISSION_DENIED"
+          : "OWNER_UNAVAILABLE",
+  );
 const normalize = (command: SourceCommand) =>
   command.type === "restore"
     ? command
@@ -250,7 +261,7 @@ export function createSourceWorkspace({
         );
       return status.getSnapshot().phase === "active"
         ? { ok: true, changed: false }
-        : failure(status.getSnapshot().message);
+        : statusFailure(status.getSnapshot());
     } catch {
       const message =
         "The workspace could not start. Keep your draft and retry.";
@@ -303,14 +314,7 @@ export function createSourceWorkspace({
         current = status.getSnapshot();
       }
       if (current.phase !== "active" || !current.workspace)
-        return failure(
-          current.message,
-          current.phase === "expired"
-            ? "WORKSPACE_EXPIRED"
-            : current.phase === "denied"
-              ? "PERMISSION_DENIED"
-              : "OWNER_UNAVAILABLE",
-        );
+        return statusFailure(current);
       const version = generation;
       const workspaceId = current.workspace.id;
       const intent = normalize(command);

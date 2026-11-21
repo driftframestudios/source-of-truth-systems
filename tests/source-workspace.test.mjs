@@ -526,3 +526,11 @@ test('example recovery points to existing controls and unknown failures mask sup
   assert.doesNotMatch(unknown.message, /private internal details/);
   assert.ok(unknown.id);
 });
+
+
+test('a workspace that expires during post-start hydration retains its expiry recovery identity', async () => {
+  const owner = createSourceWorkspace({ baseline, request: async operation => operation === 'StartWorkspace' ? reply(operation) : { code: 'EXPIRED', message: 'Start another workspace to keep this draft.' } });
+  const result = await owner.start(scenario);
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'WORKSPACE_EXPIRED');
+});
