@@ -469,14 +469,14 @@ export function createCohortProjection(
     expression: string;
   };
   type Summary = { eligible: number; held: number; expression: string };
-  // Weak keys follow admitted immutable trees. Removed drafts/saved rules can be collected.
-  const analyses = new WeakMap<RuleNode, Analysis>();
+  // Only the current analysis retains specimen arrays and all-node counts.
+  // Saved definitions keep compact weak-key summaries even after they have been opened.
+  let activeAnalysis: { root: RuleNode; result: Analysis } | undefined;
   const summaries = new WeakMap<RuleNode, Summary>();
   const facetCounts = new Map<Facet, Map<string, number>>();
   const options = cohortFacetOptions(specimens);
   function analyze(root: RuleNode): Analysis {
-    const previous = analyses.get(root);
-    if (previous) return previous;
+    if (activeAnalysis?.root === root) return activeAnalysis.result;
     const counts = new Map<string, number>();
     const result: Analysis = {
       counts,
@@ -510,7 +510,7 @@ export function createCohortProjection(
           specimen,
         );
       }
-    analyses.set(root, result);
+    activeAnalysis = { root, result };
     return result;
   }
   function summary(root: RuleNode): Summary {

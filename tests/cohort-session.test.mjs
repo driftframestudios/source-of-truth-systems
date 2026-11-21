@@ -376,6 +376,8 @@ test('all-node analysis shares leaf work at admitted depth and reuses unchanged 
   projection.countFacet('tumorPercent', '30');
   assert.equal(reads, afterPalette);
   assert.notEqual(projection.analyze({ ...root, negated: true }), analysis);
+  assert.notEqual(projection.analyze(root), analysis); // reopening a saved root recomputes after another root
+  assert.equal(projection.summary(root), saved);
   assert.notEqual(createCohortProjection(specimens, []).analyze(root), analysis);
 });
 
