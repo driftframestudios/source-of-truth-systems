@@ -16,7 +16,7 @@ import { meetsSpecimenTarget, specimenTargetLabel } from '../../services/specime
 import type { Specimen, Biomarker } from '../../types';
 import { useSpecimens, useBiomarkers } from '../../services/recordSessionContext';
 import { useCohortSession } from '../../services/cohortSessionContext';
-import { COHORT_LIMITS, cohortFacetOptions, createCohortProjection } from '../../services/cohortRules';
+import { COHORT_LIMITS, cohortFacetOptions, createCohortProjection, cohortFacet, countPredicates, predicateText, toExpression, emptyRuleText, createRuleFactory, createCohortPresets } from '../../services/cohortRules';
 import type { Facet, Joiner, PredicateNode, GroupNode, RuleNode } from '../../services/cohortRules';
 import { cohortEditorReducer, createCohortEditor } from '../../services/cohortEditor';
 import type { SavedCohortRule } from '../../services/cohortSession';
@@ -38,82 +38,30 @@ interface FacetDef {
 
 const fmt = (s: string) => s.replace(/_/g, ' ');
 const OPTIONS = cohortFacetOptions(STORE.specimens);
-const FACETS: ReadonlyArray<FacetDef> = [
-  { id: 'assay', label: 'Assay', family: 'Specimen', icon: Dna, accent: 'var(--cohort-teal)', mode: 'enum', options: OPTIONS.assay },
-  { id: 'priority', label: 'Priority', family: 'Specimen', icon: Activity, accent: 'var(--cohort-rose)', mode: 'enum', options: OPTIONS.priority },
-  { id: 'stage', label: 'Pipeline stage', family: 'Specimen', icon: Layers, accent: 'var(--cohort-sky)', mode: 'enum', options: OPTIONS.stage },
-  { id: 'orderState', label: 'Order workflow', family: 'Specimen', icon: GitMerge, accent: 'var(--cohort-sky)', mode: 'enum', options: OPTIONS.orderState },
-  { id: 'tumorPercent', label: 'Tumor content ≥', family: 'Specimen', icon: FlaskConical, accent: 'var(--cohort-violet)', mode: 'gte', options: OPTIONS.tumorPercent, unit: '%' },
-  { id: 'consent', label: 'Consent', family: 'Governance', icon: ShieldAlert, accent: 'var(--cohort-amber)', mode: 'enum', options: OPTIONS.consent },
-  { id: 'dataClass', label: 'Data class', family: 'Governance', icon: Database, accent: 'var(--cohort-blue)', mode: 'enum', options: OPTIONS.dataClass },
-  { id: 'geography', label: 'Geography', family: 'Governance', icon: MapPin, accent: 'var(--cohort-slate)', mode: 'enum', options: OPTIONS.geography },
-  { id: 'coverageMet', label: 'All metric targets met', family: 'QC', icon: Gauge, accent: 'var(--cohort-mint)', mode: 'bool', options: OPTIONS.coverageMet },
-  { id: 'qcFlagged', label: 'Has QC flag', family: 'QC', icon: ShieldCheck, accent: 'var(--cohort-red)', mode: 'bool', options: OPTIONS.qcFlagged },
-  { id: 'variantsCalled', label: 'Variants called ≥', family: 'QC', icon: CircleDot, accent: 'var(--cohort-cyan)', mode: 'gte', options: OPTIONS.variantsCalled },
-  { id: 'biomarkerCategory', label: 'Biomarker class', family: 'Biomarker', icon: Target, accent: 'var(--cohort-amber)', mode: 'enum', options: OPTIONS.biomarkerCategory },
-  { id: 'biomarkerTier', label: 'Actionability tier', family: 'Biomarker', icon: Sparkles, accent: 'var(--cohort-pink)', mode: 'enum', options: OPTIONS.biomarkerTier },
-  { id: 'biomarkerReview', label: 'Biomarker review', family: 'Biomarker', icon: ShieldCheck, accent: 'var(--cohort-pink)', mode: 'enum', options: OPTIONS.biomarkerReview },
-];
-
-const facetById = (id: Facet) => FACETS.find((f) => f.id === id)!;
-
+const FACET_UI = {
+  assay: { family: 'Specimen', icon: Dna, accent: 'var(--cohort-teal)' },
+  priority: { family: 'Specimen', icon: Activity, accent: 'var(--cohort-rose)' },
+  stage: { family: 'Specimen', icon: Layers, accent: 'var(--cohort-sky)' },
+  orderState: { family: 'Specimen', icon: GitMerge, accent: 'var(--cohort-sky)' },
+  tumorPercent: { family: 'Specimen', icon: FlaskConical, accent: 'var(--cohort-violet)' },
+  consent: { family: 'Governance', icon: ShieldAlert, accent: 'var(--cohort-amber)' },
+  dataClass: { family: 'Governance', icon: Database, accent: 'var(--cohort-blue)' },
+  geography: { family: 'Governance', icon: MapPin, accent: 'var(--cohort-slate)' },
+  coverageMet: { family: 'QC', icon: Gauge, accent: 'var(--cohort-mint)' },
+  qcFlagged: { family: 'QC', icon: ShieldCheck, accent: 'var(--cohort-red)' },
+  variantsCalled: { family: 'QC', icon: CircleDot, accent: 'var(--cohort-cyan)' },
+  biomarkerCategory: { family: 'Biomarker', icon: Target, accent: 'var(--cohort-amber)' },
+  biomarkerTier: { family: 'Biomarker', icon: Sparkles, accent: 'var(--cohort-pink)' },
+  biomarkerReview: { family: 'Biomarker', icon: ShieldCheck, accent: 'var(--cohort-pink)' },
+} satisfies Record<Facet, Pick<FacetDef, 'family' | 'icon' | 'accent'>>;
+const FACETS = (Object.keys(FACET_UI) as Facet[]).map(id => ({ id, ...cohortFacet(id), ...FACET_UI[id], options: OPTIONS[id] }));
+const facetById = (id: Facet): FacetDef => ({ id, ...cohortFacet(id), ...FACET_UI[id], options: OPTIONS[id] });
 let seq = 0;
-const nid = (p: string) => `${p}_${(++seq).toString(36)}_${Math.random().toString(36).slice(2, 5)}`;
-
-const pred = (facet: Facet, value: string, negated = false): PredicateNode =>
-  ({ kind: 'predicate', id: nid('p'), facet, value, negated });
-
-function predicateText(p: PredicateNode): string {
-  const f = facetById(p.facet);
-  if (f.mode === 'bool') return f.label;
-  if (f.mode === 'gte') return `${f.label} ${p.value}${f.unit ?? ''}`;
-  return `${f.label} = ${fmt(p.value)}`;
-}
-
-function toExpression(node: RuleNode, depth = 0): string {
-  const inner = node.kind === 'predicate'
-    ? `${node.facet}${facetById(node.facet).mode === 'gte' ? '>=' : '='}${node.value}`
-    : node.children.length === 0 ? 'TRUE'
-      : node.children.map((c) => toExpression(c, depth + 1)).join(` ${node.joiner} `);
-  const wrapped = node.kind === 'group' && depth > 0 && node.children.length > 1 ? `(${inner})` : inner;
-  return node.negated ? `NOT ${node.kind === 'group' && node.children.length > 1 && depth === 0 ? `(${wrapped})` : wrapped}` : wrapped;
-}
-
-function countPredicates(n: RuleNode): number {
-  return n.kind === 'predicate' ? 1 : n.children.reduce((a, c) => a + countPredicates(c), 0);
-}
-
-// Seed rule: tumor-board-ready actionable NSCLC/colorectal cohort.
-const SEED: GroupNode = {
-  kind: 'group', id: 'root', joiner: 'AND', negated: false, label: 'Cohort root',
-  children: [
-    {
-      kind: 'group', id: nid('g'), joiner: 'OR', negated: false, label: 'Actionable signal',
-      children: [pred('biomarkerTier', 'tier_1'), pred('biomarkerCategory', 'signature')],
-    },
-    pred('coverageMet', 'true'),
-    pred('consent', 'rescinded', true),
-  ],
-};
-
-const PRESETS: ReadonlyArray<{ id: string; label: string; build: () => GroupNode }> = [
-  { id: 'tb', label: 'Tumor-board ready', build: () => ({ ...SEED, children: SEED.children.map((c) => c) }) },
-  {
-    id: 'reseq', label: 'Re-sequence candidates', build: () => ({
-      kind: 'group', id: 'root', joiner: 'AND', negated: false, label: 'Cohort root',
-      children: [
-        { kind: 'group', id: nid('g'), joiner: 'OR', negated: false, label: 'QC concern', children: [pred('qcFlagged', 'true'), pred('coverageMet', 'true', true)] },
-        pred('consent', 'active'),
-      ],
-    }),
-  },
-  {
-    id: 'gov', label: 'Governance holds', build: () => ({
-      kind: 'group', id: 'root', joiner: 'OR', negated: false, label: 'Cohort root',
-      children: [pred('consent', 'rescinded'), pred('consent', 'pending'), pred('consent', 'expired')],
-    }),
-  },
-];
+const factory = createRuleFactory(kind => `${kind}_${(++seq).toString(36)}_${Math.random().toString(36).slice(2, 5)}`);
+const pred = factory.predicate;
+const nid = factory.id;
+const PRESETS = createCohortPresets(factory);
+const SEED = PRESETS[0].build();
 
 // ============================================================
 // Palette card (draggable source)
@@ -619,7 +567,7 @@ export function BooleanBuilderView() {
           <div className="p-3 space-y-4">
             <ul className="rounded border border-[var(--sot-shell-strong-border)]/[0.06] bg-[var(--sot-shell-text)]/[0.015] px-1.5 py-1">
               {root.children.length === 0
-                ? <li className="text-[9px] font-mono text-[var(--sot-shell-muted)] py-2 text-center">Empty — all specimens match</li>
+                ? <li className="text-[9px] font-mono text-[var(--sot-shell-muted)] py-2 text-center">{emptyRuleText(root)}</li>
                 : <RuleListing node={root} index={0} />}
             </ul>
 
