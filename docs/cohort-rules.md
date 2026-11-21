@@ -14,6 +14,12 @@ This shared owner supersedes the earlier view-local rule snapshots. The palette,
 
 Acceptance copies only owned definition fields and validates names, group labels, unique node IDs, supported facet/value pairs, joiners and nesting. The limits are 120 characters per rule name, 100 per group label, 128 cards and eight nested levels. Draft operations apply the card/depth bounds before recursive rendering, matching or expression building. A rejected addition retains the existing canvas and explains how removing a card or unlinking a group makes room. Editable labels remain flexible until Save applies the full definition contract. A refusal preserves both the accepted collection and the visitor's open draft.
 
+## Paint and geometry
+
+`cohort-builder.css` owns the local paint adapter for group depth, predicates, focus/selection, expression and facet accents. Dark preserves the original navy surfaces and accent family. Light and High contrast pair those roles with the shared shell/status tokens, including result flags and markers. Facet labels and rule semantics remain separate from this presentation adapter. Theme changes preserve the mounted tree, focus, selected cards, draft name and saved rules.
+
+`tests/browser/cohort-theme.spec.mjs` checks computed text against ancestor-composited solid/translucent backgrounds at laptop and compact-desktop widths, including hover and drag-over. Settled captures cover all three appearances. This bounded paint check complements visual inspection; gradients, images and general color-vision compatibility retain separate evidence needs.
+
 ## Matches and consent
 
 The canvas, palette and saved-rule cards calculate from the same current records. **Matched** includes every record satisfying the definition. **Eligible** includes only matching records with active consent. **Consent-held** counts pending, rescinded and expired records separately. These records remain inspectable in the example result cards and stay outside the eligible cohort, including when the rule uses OR or negates consent. No patient-data export is implied by saving a definition.
