@@ -458,17 +458,108 @@ export function createCohortProjection(
             : node.children.some((child) => evaluate(child, specimen));
     return node.negated ? !result : result;
   }
+  type Matches = {
+    matched: Specimen[];
+    eligible: Specimen[];
+    held: Specimen[];
+  };
+  type Analysis = Matches & {
+    counts: ReadonlyMap<string, number>;
+    predicates: number;
+    expression: string;
+  };
+  type Summary = { eligible: number; held: number; expression: string };
+  // Only the current analysis retains specimen arrays and all-node counts.
+  // Saved definitions keep compact weak-key summaries even after they have been opened.
+  let activeAnalysis: { root: RuleNode; result: Analysis } | undefined;
+  const summaries = new WeakMap<RuleNode, Summary>();
+  const facetCounts = new Map<Facet, Map<string, number>>();
+  const options = cohortFacetOptions(specimens);
+  function analyze(root: RuleNode): Analysis {
+    if (activeAnalysis?.root === root) return activeAnalysis.result;
+    const counts = new Map<string, number>();
+    const result: Analysis = {
+      counts,
+      matched: [],
+      eligible: [],
+      held: [],
+      predicates: countPredicates(root),
+      expression: toExpression(root),
+    };
+    function visit(node: RuleNode, specimen: Specimen): boolean {
+      let value: boolean;
+      if (node.kind === "predicate")
+        value = matchesFacet(node.facet, node.value, specimen);
+      else {
+        value = node.children.length === 0 || node.joiner === "AND";
+        // Every child contributes its own count, even after its parent result is known.
+        for (const child of node.children) {
+          const childValue = visit(child, specimen);
+          value =
+            node.joiner === "AND" ? value && childValue : value || childValue;
+        }
+      }
+      if (node.negated) value = !value;
+      counts.set(node.id, (counts.get(node.id) ?? 0) + Number(value));
+      return value;
+    }
+    for (const specimen of specimens)
+      if (visit(root, specimen)) {
+        result.matched.push(specimen);
+        (specimen.consent === "active" ? result.eligible : result.held).push(
+          specimen,
+        );
+      }
+    activeAnalysis = { root, result };
+    return result;
+  }
+  function summary(root: RuleNode): Summary {
+    const previous = summaries.get(root);
+    if (previous) return previous;
+    let eligible = 0,
+      held = 0;
+    for (const specimen of specimens)
+      if (evaluate(root, specimen)) {
+        if (specimen.consent === "active") eligible++;
+        else held++;
+      }
+    const result = { eligible, held, expression: toExpression(root) };
+    summaries.set(root, result);
+    return result;
+  }
   return {
     biomarkersFor,
-    countFacet: (facet: Facet, value: string) =>
-      specimens.filter((s) => matchesFacet(facet, value, s)).length,
-    count: (node: RuleNode) =>
-      specimens.filter((s) => evaluate(node, s)).length,
-    match(node: RuleNode) {
-      const matched = specimens.filter((s) => evaluate(node, s));
-      const eligible = matched.filter((s) => s.consent === "active");
-      const held = matched.filter((s) => s.consent !== "active");
-      return { matched, eligible, held };
+    analyze,
+    summary,
+    countFacet(facet: Facet, value: string) {
+      const cached = facetCounts.get(facet)?.get(value);
+      if (cached !== undefined) return cached;
+      let count = 0;
+      for (const specimen of specimens)
+        if (matchesFacet(facet, value, specimen)) count++;
+      // Admitted options bound cache cardinality; custom callers retain ordinary evaluation.
+      if (options[facet].includes(value)) {
+        let entries = facetCounts.get(facet);
+        if (!entries) facetCounts.set(facet, (entries = new Map()));
+        entries.set(value, count);
+      }
+      return count;
+    },
+    count(node: RuleNode) {
+      let count = 0;
+      for (const specimen of specimens) if (evaluate(node, specimen)) count++;
+      return count;
+    },
+    match(node: RuleNode): Matches {
+      const result: Matches = { matched: [], eligible: [], held: [] };
+      for (const specimen of specimens)
+        if (evaluate(node, specimen)) {
+          result.matched.push(specimen);
+          (specimen.consent === "active" ? result.eligible : result.held).push(
+            specimen,
+          );
+        }
+      return result;
     },
   };
 }

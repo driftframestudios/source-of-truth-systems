@@ -24,7 +24,9 @@ The typed UI adapter owns facet order, families, icons and accent tokens. Both e
 
 ## Matches and consent
 
-The canvas, palette and saved-rule cards calculate from the same current records. **Matched** includes every record satisfying the definition. **Eligible** includes only matching records with active consent. **Consent-held** counts pending, rescinded and expired records separately. These records remain inspectable in the example result cards and stay outside the eligible cohort, including when the rule uses OR or negates consent. No patient-data export is implied by saving a definition.
+The canvas, palette and saved-rule cards calculate from the same current records. One active-analysis slot retains the open tree only. A postorder analysis visits each open-tree node once per specimen and retains counts plus the displayed matched/eligible/held rows. Selection, focus and rule-name edits reuse that analysis. A new tree or specimen/biomarker snapshot recomputes it. Palette counts cache admitted options; saved rules cache only counts and expression through weak tree keys, so removing a rule releases its derived summary with its definition. Saved definitions remain visitor-owned until explicit removal or reload. Count-only queries use direct loops; a single-root query retains short circuiting.
+
+For S specimens, N nodes and predicate cost P, all-node analysis performs O(SNP) work and keeps O(N + S) result storage. A focused 100-specimen, 128-node, depth-8 probe performs 12,000 predicate reads, compared with the prior 108,000 reads for separate per-node counts. This measures source work; elapsed-time responsiveness depends on the receiving device. **Matched** includes every record satisfying the definition. **Eligible** includes only matching records with active consent. **Consent-held** counts pending, rescinded and expired records separately. These records remain inspectable in the example result cards and stay outside the eligible cohort, including when the rule uses OR or negates consent. No patient-data export is implied by saving a definition.
 
 ## Evidence and continuation
 

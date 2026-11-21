@@ -16,7 +16,7 @@ import { meetsSpecimenTarget, specimenTargetLabel } from '../../services/specime
 import type { Specimen, Biomarker } from '../../types';
 import { useSpecimens, useBiomarkers } from '../../services/recordSessionContext';
 import { useCohortSession } from '../../services/cohortSessionContext';
-import { COHORT_LIMITS, cohortFacetOptions, createCohortProjection, cohortFacet, countPredicates, predicateText, toExpression, emptyRuleText, createRuleFactory, createCohortPresets } from '../../services/cohortRules';
+import { COHORT_LIMITS, cohortFacetOptions, createCohortProjection, cohortFacet, predicateText, emptyRuleText, createRuleFactory, createCohortPresets } from '../../services/cohortRules';
 import type { Facet, Joiner, PredicateNode, GroupNode, RuleNode } from '../../services/cohortRules';
 import { cohortEditorReducer, createCohortEditor } from '../../services/cohortEditor';
 import type { SavedCohortRule } from '../../services/cohortSession';
@@ -404,12 +404,12 @@ export function BooleanBuilderView() {
   const biomarkers = useBiomarkers();
   const projection = useMemo(() => createCohortProjection(specimens, biomarkers), [specimens, biomarkers]);
 
-  const { matched: matches, eligible, held } = useMemo(() => projection.match(root), [root, projection]);
-  const expr = useMemo(() => toExpression(root), [root]);
+  const analysis = useMemo(() => projection.analyze(root), [root, projection]);
+  const { matched: matches, eligible, held, expression: expr } = analysis;
 
   const ctx: CanvasCtx = {
     rootId: root.id, selected, focusId,
-    matchCount: projection.count,
+    matchCount: node => analysis.counts.get(node.id) ?? 0,
     specimenCount: specimens.length,
     toggleSelect: (id) => dispatch({ type: 'select', id }),
     setFocus: (id) => dispatch({ type: 'focus', id }),
@@ -560,7 +560,7 @@ export function BooleanBuilderView() {
           <div className="flex items-center gap-1.5">
             <ListTree size={11} className="text-sky-400" />
             <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--sot-shell-muted)]">Compiled rule</span>
-            <span className="ml-auto text-[8px] font-mono text-[var(--sot-shell-muted)]">{countPredicates(root)} predicates</span>
+            <span className="ml-auto text-[8px] font-mono text-[var(--sot-shell-muted)]">{analysis.predicates} predicates</span>
           </div>
         </div>
         <ScrollArea className="flex-1 min-h-0">
@@ -609,7 +609,7 @@ export function BooleanBuilderView() {
               ) : (
                 <div className="space-y-1.5">
                   {saved.map((r) => {
-                    const current = projection.match(r.root);
+                    const current = projection.summary(r.root);
                     return <div key={r.id} className="rounded border border-[var(--sot-shell-strong-border)]/[0.06]">
                       <button onClick={() => openRule(r)} aria-pressed={loaded?.id === r.id}
                         aria-label={`Open rule ${r.name}`}
@@ -618,8 +618,8 @@ export function BooleanBuilderView() {
                           <span className="text-[10px] text-[var(--sot-shell-text)] truncate">{r.name}</span>
                           <ChevronRight size={9} className="ml-auto text-[var(--sot-shell-muted)]" />
                         </div>
-                        <div className="text-[8px] font-mono text-[var(--sot-shell-muted)] truncate">{toExpression(r.root)}</div>
-                        <div className="text-[8px] font-mono text-teal-400">{current.eligible.length} eligible · {current.held.length} consent-held</div>
+                        <div className="text-[8px] font-mono text-[var(--sot-shell-muted)] truncate">{current.expression}</div>
+                        <div className="text-[8px] font-mono text-teal-400">{current.eligible} eligible · {current.held} consent-held</div>
                       </button>
                       <button onClick={() => removeRule(r)} aria-label={`Remove rule ${r.name}`}
                         className="px-2 py-1 text-[9px] font-mono text-[var(--sot-shell-muted)] hover:text-[var(--sot-status-danger)] underline">Remove</button>

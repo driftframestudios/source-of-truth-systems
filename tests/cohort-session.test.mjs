@@ -350,3 +350,55 @@ test('preset factories allocate independent identities and admission reports a b
   assert.deepEqual(inspectRuleDefinition(invalid, options).finding, { code: 'facet-value', path: [0], nodeId: 'priority-unknown' });
   assert.equal(inspectRuleDefinition(rule([pred('priority', 'stat'), pred('priority', 'stat')]), options).finding.code, 'duplicate-id');
 });
+
+test('all-node analysis shares leaf work at admitted depth and reuses unchanged tree snapshots', () => {
+  let reads = 0;
+  const specimens = Array.from({ length: 100 }, (_, id) => ({ ...STORE.specimens[0], id: String(id), get tumorPercent() { reads++; return 70; } }));
+  let next = 0;
+  const factory = createRuleFactory(kind => `${kind}${++next}`);
+  let root = factory.group(Array.from({ length: 120 }, () => factory.predicate('tumorPercent', '30')));
+  for (let depth = 0; depth < 7; depth++) root = factory.group([root]);
+  assert.equal(withinCohortDraftLimits(root), true); // 128 nodes, leaf depth 8
+  const projection = createCohortProjection(specimens, []);
+  const analysis = projection.analyze(root);
+  assert.equal(reads, 12000);
+  assert.equal(analysis.counts.size, 128);
+  assert.equal(analysis.counts.get(root.id), 100);
+  assert.equal(analysis.predicates, 120);
+  for (let selection = 0; selection < 5; selection++) assert.equal(projection.analyze(root), analysis);
+  assert.equal(reads, 12000);
+  const saved = projection.summary(root);
+  const afterSummary = reads;
+  assert.equal(projection.summary(root), saved);
+  assert.equal(reads, afterSummary);
+  assert.equal(projection.countFacet('tumorPercent', '30'), 100);
+  const afterPalette = reads;
+  projection.countFacet('tumorPercent', '30');
+  assert.equal(reads, afterPalette);
+  assert.notEqual(projection.analyze({ ...root, negated: true }), analysis);
+  assert.notEqual(projection.analyze(root), analysis); // reopening a saved root recomputes after another root
+  assert.equal(projection.summary(root), saved);
+  assert.notEqual(createCohortProjection(specimens, []).analyze(root), analysis);
+});
+
+test('fused counts preserve nested negation, consent holds and current record analysis', () => {
+  const projection = createCohortProjection(STORE.specimens, STORE.biomarkers);
+  const factory = createRuleFactory((() => { let id=0; return kind => `${kind}${++id}`; })());
+  const roots = createCohortPresets(factory).map(p => p.build());
+  roots.push({ ...rule([], 'OR').root, negated: true });
+  for (const root of roots) {
+    const analysis = projection.analyze(root);
+    assert.deepEqual(analysis.matched, projection.match(root).matched);
+    const visit = node => { assert.equal(analysis.counts.get(node.id), projection.count(node)); if (node.kind === 'group') node.children.forEach(visit); };
+    visit(root);
+    assert.equal(projection.summary(root).eligible, analysis.eligible.length);
+    assert.equal(projection.summary(root).held, analysis.held.length);
+  }
+  assert.equal(projection.analyze(roots[0]).matched.length, 4);
+  assert.equal(projection.analyze(roots[0]).eligible.length, 3);
+  const approved = factory.group([factory.predicate('biomarkerReview', 'approved')]);
+  const before = createCohortProjection(STORE.specimens, []).analyze(approved);
+  const after = createCohortProjection(STORE.specimens, [{ ...STORE.biomarkers[0], reviewState: 'approved' }]).analyze(approved);
+  assert.equal(before.matched.length, 0);
+  assert.equal(after.matched.length, 1);
+});
