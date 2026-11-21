@@ -21,7 +21,7 @@ test('mobile entry defers Plate and a failed download keeps Corridor and reload 
   await page.getByRole('button', { name: 'Plate', exact: true }).click();
   await page.unroute('**/MobilePlate-*.js');
   await page.getByRole('button', { name: 'Reload to try again' }).click();
-  await expect(page.getByRole('heading', { name: 'Accession + Plate' })).toBeVisible();
-  await page.getByRole('button', { name: 'Plate', exact: true }).click();
+  await expect(page).toHaveURL(/\?scene=plate$/);
+  await expect(page.getByRole('button', { name: 'Plate', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('heading', { name: 'Inside the plate.' })).toBeVisible();
 });

@@ -39,7 +39,10 @@ test('appearance repaints the actual corridor without replacing its camera, and 
   await expect(appearance.getByRole('radio', { name: 'Light', exact: true })).toBeChecked();
   await expect(page.getByText('orders held', { exact: true }).locator('..')).toContainText('3');
   await page.reload();
+  await expect(page).toHaveURL(/\?section=specimens$/);
+  await expect(page.getByRole('heading', { name: 'Specimen register', exact: true })).toBeVisible();
   await expect(appearance.getByRole('radio', { name: 'Light', exact: true })).toBeChecked();
+  await page.getByRole('button', { name: /^Lanes/ }).click();
   await expect(surface).toHaveCSS('background-color', expectedBackground.light);
   expect(errors).toEqual([]);
 });
