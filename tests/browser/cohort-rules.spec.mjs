@@ -179,3 +179,17 @@ test('clear restores AND and an unnegated root before adding new cards', async (
   await page.getByTitle('Add Order workflow in_progress to the focused group',{exact:true}).click();
   await expect(page.getByLabel('Current cohort counts')).toContainText('0 matched');
 });
+
+
+test('each rejected cross-group link attempt returns feedback', async ({page}) => {
+  await page.goto('/');
+  await openBuilder(page);
+  const root = page.locator('[data-cohort-group="root"]');
+  await root.getByRole('checkbox',{name:'Select group for linking',exact:true}).check();
+  await root.getByRole('checkbox',{name:'Select Actionability tier card for linking',exact:true}).check();
+  const link = page.getByRole('button',{name:'Link AND',exact:true});
+  await link.click();
+  await expect(page.getByText('Choose cards in one group',{exact:true})).toHaveCount(1);
+  await link.click();
+  await expect(page.getByText('Choose cards in one group',{exact:true})).toHaveCount(2);
+});

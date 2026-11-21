@@ -449,7 +449,10 @@ export function BooleanBuilderView() {
   const [loaded, setLoaded] = useState<{ id: string; revision: number } | null>(null);
   const [notice, setNotice] = useState('');
   useEffect(() => {
-    if (editor.issue === 'siblings') pushToast({ severity: 'warning', title: 'Choose cards in one group', message: 'Choose cards under the same parent group, or unlink a nested group first.' });
+    if (editor.issue === 'siblings') {
+      pushToast({ severity: 'warning', title: 'Choose cards in one group', message: 'Choose cards under the same parent group, or unlink a nested group first.' });
+      dispatch({ type: 'clearIssue' });
+    }
   }, [editor.issue, pushToast]);
   const edit = (action: Parameters<typeof cohortEditorReducer>[1]) => { dispatch(action); setNotice(''); };
   const specimens = useSpecimens();
